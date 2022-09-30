@@ -1,0 +1,1 @@
+from fasterrisk import fasterrisk
