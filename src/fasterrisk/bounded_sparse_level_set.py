@@ -1,9 +1,8 @@
 import numpy as np
 import sys
 import warnings
-from numba import jit
 warnings.filterwarnings("ignore")
-from ScoringSys.utils_cleaned import get_support_indices, get_nonsupport_indices, normalize_X, compute_logisticLoss_from_yXB, compute_logisticLoss_from_ExpyXB, compute_logisticLoss_from_X_y_beta_betas
+from fasterrisk.utils import get_support_indices, get_nonsupport_indices, normalize_X, compute_logisticLoss_from_yXB, compute_logisticLoss_from_ExpyXB, compute_logisticLoss_from_X_y_beta_betas
 
 
 class sparseLogRegModel:

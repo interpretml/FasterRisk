@@ -1,10 +1,9 @@
 import numpy as np
 import sys
 import warnings
-from numba import jit
 warnings.filterwarnings("ignore")
 
-from utils import get_support_indices, get_nonsupport_indices, compute_logisticLoss_from_betas_and_yX, get_acc_and_auc
+from fasterrisk.utils import get_support_indices, get_nonsupport_indices, compute_logisticLoss_from_betas_and_yX, get_acc_and_auc
 
 
 class rayStarSearchModel:

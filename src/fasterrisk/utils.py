@@ -1,5 +1,5 @@
 import numpy as np
-import sklearn
+import sklearn.metrics
 
 def get_support_indices(betas):
     return np.where(np.abs(betas) > 1e-9)[0]
