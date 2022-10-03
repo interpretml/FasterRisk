@@ -7,29 +7,7 @@ from fasterrisk.utils import get_support_indices, get_nonsupport_indices, normal
 
 class sparseLogRegModel:
     def __init__(self, X, y, lambda2=1e-8, intercept=True, original_lb=-5, original_ub=5):
-        """
-        Parameters
-        ----------
-        self.original_beta0:                scalar for the intercept used for output of the class
-        self.original_betas:                (p, ) for the coefficients used for output
-        self.X:                             (n, p) feature matrix with n sampels and p features
-        self.n, self.p:                     number of samples and features in self.X
-        self.X_normalized:                  (p, p) normalized feature matrix, each column has mean=0 and l2 norm=1
-        self.X_mean:                        (p, ) storing the column mean of self.X
-        self.X_norm:                        (p, ) storing the column l2 norm of (self.X - self.X_mean)
-        self.X_scaled_feature_indices       an array storing the column indices of which column (self.X - self.X_mean) has norm 0
-        self.y:                             (n, ) storing the binary classification label of {-1, 1}
-        self.beta0                          scalar for the intercept used in the internal calculation of the class
-        self.betas:                         (p, ) for the coefficients used in the internal calculation of the class
-        self.yX:                            (n, p) self.yX[i, j] = self.y[i] * self.X_normalized[i, j]
-        self.ExpyXB:                        (n, ) self.ExpyXB[i] = Exp(self.y[i] * (self.b0 + (sum_{j=1}^p self.X[i, j]*self.betas[j])))
-        self.Lipschitz                      Lipschitz constant, for self.X_normalized, self.Lipschitz=1/4
-        self.intercept                      flag(T/F) denotes whether there is an intercept in the model
-        self.lambda2                        lambda2 regularization in the normalized feature space, i.e., self.X
-        self.lbs                            (p, ) lower bounds of each coefficient self.betas
-        self.ubs                            (p, ) upper bounds of each coefficient self.betas
-        """
-        # 
+        
         if intercept is True:
             self.X = X[:, 1:] # (n, p)
         else:
