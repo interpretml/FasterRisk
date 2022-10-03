@@ -1,8 +1,9 @@
 import numpy as np
 from fasterrisk.bounded_sparse_level_set import sparseLogRegModel
-from fasterrisk.heuristic_rounding import rayStarSearchModel
+from fasterrisk.heuristic_rounding import starRaySearchModel
 from fasterrisk.utils import get_acc_and_auc
 import time
+from fasterrisk.fasterrisk import RiskScoreOptimizer, RiskScoreClassifier
 
 def get_expected_answers():
     expected_logisticLosses = np.asarray([9798.652346518875, 9914.75974232043, 9859.615757931417, 9883.324461826953, 9895.728067750335, 9923.881690282931, 10004.826348100678, 9988.041001585896, 9980.639483585337, 10023.144780691362, 10000.803138904073, 10000.838406643863, 10030.439083768599, 10023.507653592056, 10027.26240920617, 10027.26240920617, 10024.816378572234, 10028.557714258925, 10035.510372611705, 10054.179137320903, 10045.516949571933, 10054.903429536253, 10064.52587881103, 10072.250543371647, 10082.486290745104, 10071.493061045443, 10057.369163995263, 10067.44943799388, 10067.922597085122, 10064.658255792961, 10066.98198453515, 10067.428679067445, 10064.912776396004, 10058.183697460874, 10073.921111400768, 10136.949587680912, 10156.006003703993, 10159.611021158398, 10184.96322485103, 10196.138801812713, 10261.125789923517, 10232.625475088009, 10229.435056996523, 10206.19527767557, 10232.08711343806, 10232.08711343806, 10258.249327857036, 10252.622156121819, 10226.013558258059, 10232.07439049685])
@@ -20,7 +21,7 @@ def save_to_dict(int_sols_dict, multiplier, int_sol, train_acc, test_acc, train_
     int_sols_dict["test_aucs"].append(test_auc)
     int_sols_dict["logisticLosses"].append(logisticLoss)
 
-def test_check_solutions():
+def test_check_solutions_pipeline():
     # import data
     train_test_data = np.load("tests/train_test_data.npz", allow_pickle=True)
     
@@ -45,12 +46,12 @@ def test_check_solutions():
     sparseLogRegModel_object.get_sparse_sol_via_OMP(k=sparsity, beam_size=beam_size, sub_beam_size=sub_beam_size)
     
     # get the sparse diverse set
-    level_sets_solution = sparseLogRegModel_object.get_sparse_level_set(gap_tolerance=sparseLevelSet_gap_tolerance, select_top_m=sparseLevelSet_select_top_m, maxAttempts=maxAttempts) # (p+1, m'), get the rashomon set
+    level_sets_solution = sparseLogRegModel_object.get_sparse_diverse_set(gap_tolerance=sparseLevelSet_gap_tolerance, select_top_m=sparseLevelSet_select_top_m, maxAttempts=maxAttempts) # (p+1, m'), get the rashomon set
         
     # perform star ray search on every solution in sparse diverse set for a good integer solution
     int_sols_dict = {"int_sols": [], "train_accs": [], "test_accs": [], "train_aucs": [], "test_aucs": [], "logisticLosses": [], "multipliers": []}
     
-    rayStarSearchModel_object = rayStarSearchModel(X = X_train, y = y_train.reshape(-1), num_ray_search=num_ray_search, early_stop_tolerance=lineSearch_early_stop_tolerance)
+    rayStarSearchModel_object = starRaySearchModel(X = X_train, y = y_train.reshape(-1), num_ray_search=num_ray_search, early_stop_tolerance=lineSearch_early_stop_tolerance)
     
     for k in range(level_sets_solution.shape[1]):
         betas_continuous_fromLevelSet = level_sets_solution[:, k]
@@ -77,4 +78,58 @@ def test_check_solutions():
     assert np.max(np.abs(int_sols_dict["test_aucs"] - expected_test_aucs)) < 1e-8, "test_aucs values are not correct"
     assert np.max(np.abs(int_sols_dict["multipliers"] - expected_multipliers)) < 1e-8, "multipliers values are not correct"
 
-# compare with the expected answers
+def test_check_solutions_interface():
+    # import data
+    train_test_data = np.load("tests/train_test_data.npz", allow_pickle=True)
+    
+    X_train, y_train, X_test, y_test = train_test_data["X_train"], train_test_data["y_train"], train_test_data["X_test"], train_test_data["y_test"] 
+    y_train = y_train.reshape(-1)
+    y_test = y_test.reshape(-1)
+    
+    lambda2 = 1e-8
+    sparsity = 5
+    sparseLevelSet_gap_tolerance = 0.05
+    sparseLevelSet_select_top_m = 50
+    lineSearch_early_stop_tolerance = 0.001 
+    beam_size = 10
+    sub_beam_size = 10
+    maxAttempts = 50
+    num_ray_search = 20
+    
+    # obtain sparse scoring systems
+    int_sols_dict = {"int_sols": [], "train_accs": [], "test_accs": [], "train_aucs": [], "test_aucs": [], "logisticLosses": [], "multipliers": []}
+    
+    RiskScoreOptimizer_m = RiskScoreOptimizer(X = X_train, y = y_train, k = sparsity, select_top_m = sparseLevelSet_select_top_m, gap_tolerance = sparseLevelSet_gap_tolerance, beam_size = beam_size, maxAttempts = maxAttempts, num_ray_search = 20, lineSearch_early_stop_tolerance = lineSearch_early_stop_tolerance)
+
+    start_time = time.time()
+    
+    RiskScoreOptimizer_m.optimize()
+    
+    int_sols_dict['run_time'] = time.time() - start_time
+
+    multipliers, sparse_diverse_set_integer = RiskScoreOptimizer_m.get_models()
+
+    for i in range(len(multipliers)):
+        multiplier = multipliers[i]
+        integer_sol = sparse_diverse_set_integer[:, i]
+        train_acc, train_auc = get_acc_and_auc(integer_sol, X_train, y_train)
+        test_acc, test_auc = get_acc_and_auc(integer_sol, X_test, y_test)
+
+        RiskScoreClassifier_m = RiskScoreClassifier(multiplier, integer_sol[0], integer_sol[1:])
+        logisticLoss = RiskScoreClassifier_m.compute_logisticLoss(X_train[:, 1:], y_train)
+        
+        save_to_dict(int_sols_dict, multiplier, integer_sol, train_acc, test_acc, train_auc, test_auc, logisticLoss)
+
+    int_sols_dict["logisticLosses"] = np.asarray(int_sols_dict["logisticLosses"])
+    int_sols_dict["test_accs"] = np.asarray(int_sols_dict["test_accs"])
+    int_sols_dict["test_aucs"] = np.asarray(int_sols_dict["test_aucs"])
+    int_sols_dict["multipliers"] = np.asarray(int_sols_dict["multipliers"])
+
+    # check the answers
+    expected_logisticLosses, expected_test_accs, expected_test_aucs, expected_multipliers = get_expected_answers()
+  
+    assert len(int_sols_dict["logisticLosses"]) == len(expected_logisticLosses), "logistcLosses do not have the expected length"
+    assert np.max(np.abs(int_sols_dict["logisticLosses"] - expected_logisticLosses)) < 1e-8, "logisticLosses values are not correct"
+    assert np.max(np.abs(int_sols_dict["test_accs"] - expected_test_accs)) < 1e-8, "test_accs values are not correct"
+    assert np.max(np.abs(int_sols_dict["test_aucs"] - expected_test_aucs)) < 1e-8, "test_aucs values are not correct"
+    assert np.max(np.abs(int_sols_dict["multipliers"] - expected_multipliers)) < 1e-8, "multipliers values are not correct"
