@@ -29,7 +29,7 @@ def compute_logisticLoss_from_betas_and_yX(betas, yX):
     yXB = yX.dot(betas)
     return compute_logisticLoss_from_yXB(yXB)
 
-def compute_logisticLoss_from_X_y_beta_betas(X, y, beta0, betas):
+def compute_logisticLoss_from_X_y_beta0_betas(X, y, beta0, betas):
     XB = X.dot(betas) + beta0
     yXB = y * XB
     return compute_logisticLoss_from_yXB(yXB)

@@ -2,7 +2,7 @@ import numpy as np
 import sys
 import warnings
 warnings.filterwarnings("ignore")
-from fasterrisk.utils import get_support_indices, get_nonsupport_indices, normalize_X, compute_logisticLoss_from_yXB, compute_logisticLoss_from_ExpyXB, compute_logisticLoss_from_X_y_beta_betas
+from fasterrisk.utils import get_support_indices, get_nonsupport_indices, normalize_X, compute_logisticLoss_from_yXB, compute_logisticLoss_from_ExpyXB, compute_logisticLoss_from_X_y_beta0_betas
 
 
 class sparseLogRegModel:
@@ -38,7 +38,7 @@ class sparseLogRegModel:
         self.X_normalized, self.X_mean, self.X_norm, self.scaled_feature_indices = normalize_X(self.X)
         self.n, self.p = self.X_normalized.shape
         self.y = y.reshape(-1).astype(float)
-        self.yX = y * self.X_normalized
+        self.yX = y.reshape(-1, 1) * self.X_normalized
         # self.yXT = np.transpose(self.yX)
         self.yXT = np.zeros((self.p, self.n))
         self.yXT[:] = np.transpose(self.yX)[:]
@@ -238,7 +238,7 @@ class sparseLogRegModel:
     def compute_yXB(self, beta0, betas):
         return self.y*(beta0 + np.dot(self.X_normalized, betas))
     
-    def get_sparse_level_set(self, gap_tolerance=0.05, select_top_m=10, maxAttempts=50):
+    def get_sparse_diverse_set(self, gap_tolerance=0.05, select_top_m=10, maxAttempts=50):
         # select top m solutions with the lowest logistic losses
         # Note Bene: loss comparison here does not include logistic loss
         nonzero_indices = get_support_indices(self.betas)

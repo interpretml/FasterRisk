@@ -6,7 +6,7 @@ warnings.filterwarnings("ignore")
 from fasterrisk.utils import get_support_indices, get_nonsupport_indices, compute_logisticLoss_from_betas_and_yX, get_acc_and_auc
 
 
-class rayStarSearchModel:
+class starRaySearchModel:
     def __init__(self, X, y, num_ray_search=20, early_stop_tolerance=0.001):
         self.X = X
         self.y = y.reshape(-1)
@@ -66,6 +66,52 @@ class rayStarSearchModel:
         best_betas[nonzero_indices] = best_betas_sub
 
         return best_multiplier, best_betas, acc, auc, best_loss
+
+    def star_ray_search_scale_and_round(self, sparse_diverse_set_continuous):
+        sparse_diverse_set_integer = np.zeros(sparse_diverse_set_continuous.shape)
+        multipliers = np.zeros((sparse_diverse_set_integer.shape[1]))
+
+        for i in range(len(multipliers)):
+            multipliers[i], sparse_diverse_set_integer[:, i] = self.line_search_scale_and_round_new(sparse_diverse_set_continuous[:, i])
+        
+        return multipliers, sparse_diverse_set_integer
+
+    def line_search_scale_and_round_new(self, betas):
+        nonzero_indices = get_support_indices(betas)
+        num_nonzero = len(nonzero_indices)
+
+        X_sub = self.X[:, nonzero_indices]
+        yX_sub = self.yX[:, nonzero_indices]
+        betas_sub = betas[nonzero_indices]
+
+        multipliers = self.get_multipliers_for_line_search(betas_sub)
+
+        loss_continuous_betas = compute_logisticLoss_from_betas_and_yX(betas_sub, yX_sub)
+        
+        best_multiplier = 1.0
+        best_loss = 1e12
+        best_betas_sub = np.zeros((num_nonzero, ))
+
+        for multiplier in multipliers:
+            betas_sub_scaled = betas_sub * multiplier
+            yX_sub_scaled = yX_sub / multiplier
+
+            betas_sub_scaled = self.auxilliary_rounding(betas_sub_scaled, yX_sub_scaled)
+
+            tmp_loss = compute_logisticLoss_from_betas_and_yX(betas_sub_scaled / multiplier, yX_sub)
+
+            if tmp_loss < best_loss:
+                best_loss = tmp_loss
+                best_multiplier = multiplier
+                best_betas_sub[:] = betas_sub_scaled[:]
+
+            if (tmp_loss - loss_continuous_betas) / loss_continuous_betas < self.early_stop_tolerance:
+                break
+
+        best_betas = np.zeros((self.p, ))
+        best_betas[nonzero_indices] = best_betas_sub
+
+        return best_multiplier, best_betas
 
     def get_rounding_distance_and_dimension(self, betas):
         betas_floor = np.floor(betas)
