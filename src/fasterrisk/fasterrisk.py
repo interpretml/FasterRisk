@@ -68,8 +68,8 @@ class RiskScoreOptimizer:
         """
         self.sparseLogRegModel_object.get_sparse_sol_via_OMP(k=self.k, beam_size=self.beam_size, sub_beam_size=self.sub_beam_size)
         
-        beta0, betas = self.sparseLogRegModel_object.get_beta0_and_betas()
-        self.sparseDiversePoolLogRegModel_object.warm_start_from_beta0_betas(beta0 = beta0, betas = betas)
+        beta0, betas, ExpyXB = self.sparseLogRegModel_object.get_beta0_betas_ExpyXB()
+        self.sparseDiversePoolLogRegModel_object.warm_start_from_beta0_betas_ExpyXB(beta0 = beta0, betas = betas, ExpyXB = ExpyXB)
         sparse_diverse_set_continuous = self.sparseDiversePoolLogRegModel_object.get_sparse_diverse_set(gap_tolerance=self.sparseDiverseSet_gap_tolerance, select_top_m=self.sparseDiverseSet_select_top_m, maxAttempts=self.sparseDiverseSet_maxAttempts)
 
         self.multipliers, self.sparse_diverse_set_integer = self.starRaySearchModel_object.star_ray_search_scale_and_round(sparse_diverse_set_continuous)

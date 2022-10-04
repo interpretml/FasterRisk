@@ -43,10 +43,16 @@ class logRegModel:
         self.beta0, self.betas = beta0, betas
         self.ExpyXB = np.exp(self.y * self.beta0 + self.yX.dot(self.betas))
 
-    def get_beta0_and_betas(self):
+    def warm_start_from_beta0_betas_ExpyXB(self, beta0, betas, ExpyXB):
+        self.beta0, self.betas, self.ExpyXB = beta0, betas, ExpyXB
+
+    def get_beta0_betas(self):
         return self.beta0, self.betas
+
+    def get_beta0_betas_ExpyXB(self):
+        return self.beta0, self.betas, self.ExpyXB
         
-    def get_original_beta0_and_betas(self):
+    def get_original_beta0_betas(self):
         return self.transform_coefficients_to_original_space(self.beta0, self.betas)
 
     def transform_coefficients_to_original_space(self, beta0, betas):
