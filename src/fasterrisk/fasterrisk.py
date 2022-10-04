@@ -1,7 +1,8 @@
 import numpy as np
 
 from fasterrisk.bounded_sparse_level_set import sparseLogRegModel
-from fasterrisk.heuristic_rounding import starRaySearchModel
+from fasterrisk.sparseDiversePoolModel import sparseDiversePoolLogRegModel
+from fasterrisk.rounding import starRaySearchModel
 from fasterrisk.utils import compute_logisticLoss_from_X_y_beta0_betas
 
 class RiskScoreOptimizer:
@@ -42,7 +43,6 @@ class RiskScoreOptimizer:
         y_unique = np.unique(y)
         y_unique_expected = np.asarray([-1, 1])
         X_shape = X.shape
-        print("y_shape is ", y_shape)
         assert len(y_shape) == 1, "input y must have 1-D shape!"
         assert len(y_unique) == 2, "input y must have only 2 labels"
         assert max(np.abs(y_unique - y_unique_expected)) < 1e-8, "input y must be equal to only +1 or -1"
@@ -60,7 +60,7 @@ class RiskScoreOptimizer:
         self.sparseDiverseSet_maxAttempts = maxAttempts
 
         self.sparseLogRegModel_object = sparseLogRegModel(X, y, intercept=True)
-
+        self.sparseDiversePoolLogRegModel_object = sparseDiversePoolLogRegModel(X, y, intercept=True)
         self.starRaySearchModel_object = starRaySearchModel(X = X, y = y, num_ray_search=num_ray_search, early_stop_tolerance=lineSearch_early_stop_tolerance)
 
     def optimize(self):
@@ -68,7 +68,9 @@ class RiskScoreOptimizer:
         """
         self.sparseLogRegModel_object.get_sparse_sol_via_OMP(k=self.k, beam_size=self.beam_size, sub_beam_size=self.sub_beam_size)
         
-        sparse_diverse_set_continuous = self.sparseLogRegModel_object.get_sparse_diverse_set(gap_tolerance=self.sparseDiverseSet_gap_tolerance, select_top_m=self.sparseDiverseSet_select_top_m, maxAttempts=self.sparseDiverseSet_maxAttempts)
+        beta0, betas = self.sparseLogRegModel_object.get_beta0_and_betas()
+        self.sparseDiversePoolLogRegModel_object.warm_start_from_beta0_betas(beta0 = beta0, betas = betas)
+        sparse_diverse_set_continuous = self.sparseDiversePoolLogRegModel_object.get_sparse_diverse_set(gap_tolerance=self.sparseDiverseSet_gap_tolerance, select_top_m=self.sparseDiverseSet_select_top_m, maxAttempts=self.sparseDiverseSet_maxAttempts)
 
         self.multipliers, self.sparse_diverse_set_integer = self.starRaySearchModel_object.star_ray_search_scale_and_round(sparse_diverse_set_continuous)
 
