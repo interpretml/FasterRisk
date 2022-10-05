@@ -8,6 +8,16 @@ Create sparse and accurate risk scoring systems!
 $ pip install fasterrisk
 ```
 
+## Package Development ToDo List (ongoing)
+- [ ] Reupload data to Google Drive with .csv files and colnames included
+- [ ] Implement print_model_card() function in the fasterrisk module.
+- [ ] Add the usage of print_model_card() in example jupyter notebook.
+- [ ] Upload to TestPyPI to test the package
+- [ ] Add citation bib file at the bottom once the article is available on Google Scholar
+- [ ] Add underscore in front of internal functions in the modules?
+- [ ] Host documentation online with Read the Docs
+- [ ] Add Read the Docs link to GitHub repo README once it is available.
+
 ## Usage
 
 Two classes:
