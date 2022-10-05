@@ -2,7 +2,12 @@
 name = "fasterrisk"
 version = "0.1.0"
 description = "Create sparse and accurate risk scoring systems!"
-authors = ["Jiachang Liu <jiachang.liu@duke.edu>"]
+authors = ["Jiachang Liu <jiachang.liu@duke.edu>",
+           "Chudi Zhong <chudi.zhong@duke.edu>",
+           "Boxuan Li <boxuan.li@duke.edu>",
+           "Margo Setlzer <mseltzer@cs.ubc.ca>",
+           "Cynthia Rudin <cynthia@cs.duke.edu>"
+]
 maintainers = ["Jiachang Liu <jiachang.liu@duke.edu>"]
 license = "BSD 3-Clause"
 readme = "README.md"
