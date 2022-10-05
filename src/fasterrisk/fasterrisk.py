@@ -1,13 +1,13 @@
 import numpy as np
 
-from fasterrisk.bounded_sparse_level_set import sparseLogRegModel
-from fasterrisk.sparseDiversePoolModel import sparseDiversePoolLogRegModel
+from fasterrisk.sparseBeamSearch import sparseLogRegModel
+from fasterrisk.sparseDiversePool import sparseDiversePoolLogRegModel
 from fasterrisk.rounding import starRaySearchModel
 from fasterrisk.utils import compute_logisticLoss_from_X_y_beta0_betas
 
 class RiskScoreOptimizer:
     def __init__(self, X, y, k, select_top_m=50, lb=-5, ub=5, \
-                 gap_tolerance=0.05, beam_size=10, sub_beam_size=None, \
+                 gap_tolerance=0.05, parent_size=10, child_size=None, \
                  maxAttempts=50, num_ray_search=20, \
                  lineSearch_early_stop_tolerance=0.001):
         """Initialize the RiskScoreOptimizer class, which performs sparseBeamSearch and generates integer sparseDiverseSet
@@ -26,9 +26,9 @@ class RiskScoreOptimizer:
             lower bound of the coefficients, by default -5
         ub : float, optional
             upper bound of the coefficients, by default 5
-        beam_size : int, optional
+        parent_size : int, optional
             how many solutions to retain after beam search, by default 10
-        sub_beam_size : _type_, optional
+        child_size : _type_, optional
             how many new solutions to expand for each existing solution, by default None
         maxAttempts : int, optional
             how many alternative features to try in order to replace the old feature during the diverse set pool generation, by default None
@@ -50,10 +50,10 @@ class RiskScoreOptimizer:
         assert X_shape[0] == y_shape[0], "number of rows from input X must be equal to the number of elements from input y!"
 
         self.k = k
-        self.beam_size = beam_size
-        self.sub_beam_size = self.beam_size
-        if sub_beam_size is not None:
-            self.sub_beam_size = sub_beam_size
+        self.parent_size = parent_size
+        self.child_size = self.parent_size
+        if child_size is not None:
+            self.child_size = child_size
 
         self.sparseDiverseSet_gap_tolerance = gap_tolerance
         self.sparseDiverseSet_select_top_m = select_top_m
@@ -64,9 +64,9 @@ class RiskScoreOptimizer:
         self.starRaySearchModel_object = starRaySearchModel(X = X, y = y, num_ray_search=num_ray_search, early_stop_tolerance=lineSearch_early_stop_tolerance)
 
     def optimize(self):
-        """performs sparseBeamSearch and generates integer sparseDiverseSet
+        """performs sparseBeamSearch, generates integer sparseDiverseSet, and perform star ray search
         """
-        self.sparseLogRegModel_object.get_sparse_sol_via_OMP(k=self.k, beam_size=self.beam_size, sub_beam_size=self.sub_beam_size)
+        self.sparseLogRegModel_object.get_sparse_sol_via_OMP(k=self.k, parent_size=self.parent_size, child_size=self.child_size)
         
         beta0, betas, ExpyXB = self.sparseLogRegModel_object.get_beta0_betas_ExpyXB()
         self.sparseDiversePoolLogRegModel_object.warm_start_from_beta0_betas_ExpyXB(beta0 = beta0, betas = betas, ExpyXB = ExpyXB)
@@ -84,8 +84,10 @@ class RiskScoreOptimizer:
 
         Returns
         -------
-        multipliers, sparse_diverse_set_integer
-            For risk score model i, we can access its multiplier with multipliers[i] and its integer coefficients (intercept included) as sparse_diverse_set_integer[i]
+        multipliers : float[:] 
+            multipliers with each entry as multipliers[i] 
+        sparse_diverse_set_integer : float[:, :]
+            integer coefficients (intercept included) with each row as an integer solution sparse_diverse_set_integer[i]
         """
         if model_index is not None:
             return self.multipliers[model_index], self.sparse_diverse_set_integer[:, model_index]
@@ -125,7 +127,7 @@ class RiskScoreClassifier:
 
         Returns
         -------
-        float[:]
+        y_pred : float[:]
             predicted labels (+1.0 or -1.0) with shape (n, )
         """
         y_score = self.scaled_intercept + X.dot(self.scaled_coefficients)
@@ -142,7 +144,7 @@ class RiskScoreClassifier:
 
         Returns
         -------
-        float[:]
+        y_pred_prob : float[:]
             probabilities of each sample y_i to be +1 with shape (n, )
         """
         y_score = self.scaled_intercept + X.dot(self.scaled_coefficients)
@@ -150,7 +152,7 @@ class RiskScoreClassifier:
         return y_pred_prob
 
     def compute_logisticLoss(self, X, y):
-        """Compute the total logistic loss given feature matrix and labels
+        """Compute the total logistic loss given the feature matrix X and labels y
 
         Parameters
         ----------
@@ -161,7 +163,7 @@ class RiskScoreClassifier:
 
         Returns
         -------
-        float
-            total logistic loss, loss = $\sum_{i=1}^n log(1+exp(-y_i * (beta0 + X[i, :] @ beta) / multiplier))$
+        logisticLoss: float
+            total logistic loss, loss = $sum_{i=1}^n log(1+exp(-y_i * (beta0 + X[i, :] @ beta) / multiplier))$
         """
         return compute_logisticLoss_from_X_y_beta0_betas(X, y, self.scaled_intercept, self.scaled_coefficients)

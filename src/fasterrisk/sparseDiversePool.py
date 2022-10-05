@@ -1,8 +1,8 @@
 import numpy as np
 import sys
-import warnings
-warnings.filterwarnings("ignore")
-from fasterrisk.utils import get_support_indices, get_nonsupport_indices, normalize_X, compute_logisticLoss_from_yXB, compute_logisticLoss_from_ExpyXB, compute_logisticLoss_from_X_y_beta0_betas
+# import warnings
+# warnings.filterwarnings("ignore")
+from fasterrisk.utils import get_support_indices, get_nonsupport_indices, compute_logisticLoss_from_ExpyXB
 from fasterrisk.base_model import logRegModel
 
 class sparseDiversePoolLogRegModel(logRegModel):
@@ -10,6 +10,24 @@ class sparseDiversePoolLogRegModel(logRegModel):
         super().__init__(X=X, y=y, lambda2=lambda2, intercept=intercept, original_lb=original_lb, original_ub=original_ub)
    
     def get_sparse_diverse_set(self, gap_tolerance=0.05, select_top_m=10, maxAttempts=50):
+        """For the current sparse solution, get from the sparse diverse pool [select_top_m] solutions, which perform equally well as the current sparse solution. This sparse diverse pool is also called the Rashomon set. We discover new solutions by swapping 1 feature in the support of the current sparse solution.
+
+        Parameters
+        ----------
+        gap_tolerance : float, optional
+            New solution is accepted after swapping features if the new loss is within the [gap_tolerance] of the old loss, by default 0.05
+        select_top_m : int, optional
+            We select the top [select_top_m] solutions from support_size*maxAttempts number of new solutions, by default 10
+        maxAttempts : int, optional
+            We try to swap each feature in the support with [maxAttempts] of new features, by default 50
+
+        Returns
+        -------
+        intercept_array : float[:]
+            Return the intercept array with shape = (select_top_m, )
+        coefficients_array : float[:, :]
+            Return the coefficients array with shape = (select_top_m, p)
+        """
         # select top m solutions with the lowest logistic losses
         # Note Bene: loss comparison here does not include logistic loss
         nonzero_indices = get_support_indices(self.betas)
@@ -31,8 +49,6 @@ class sparseDiversePoolLogRegModel(logRegModel):
 
         sparseDiversePool_ExpyXB[-1] = self.ExpyXB
         sparseDiversePool_loss[-1] = compute_logisticLoss_from_ExpyXB(self.ExpyXB) + self.lambda2 * self.betas[nonzero_indices].dot(self.betas[nonzero_indices])
-
-        # nonzero_indices_set = set(nonzero_indices)
 
         betas_squareSum = self.betas[nonzero_indices].dot(self.betas[nonzero_indices])
         for num_old_j, old_j in enumerate(nonzero_indices):

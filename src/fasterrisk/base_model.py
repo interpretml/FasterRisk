@@ -1,8 +1,8 @@
 import numpy as np
 import sys
-import warnings
-warnings.filterwarnings("ignore")
-from fasterrisk.utils import get_support_indices, get_nonsupport_indices, normalize_X, compute_logisticLoss_from_yXB, compute_logisticLoss_from_ExpyXB, compute_logisticLoss_from_X_y_beta0_betas
+# import warnings
+# warnings.filterwarnings("ignore")
+from fasterrisk.utils import normalize_X, compute_logisticLoss_from_ExpyXB 
 
 class logRegModel:
     def __init__(self, X, y, lambda2=1e-8, intercept=True, original_lb=-5, original_ub=5):

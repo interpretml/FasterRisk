@@ -1,26 +1,33 @@
 import numpy as np
 import sys
-import warnings
-warnings.filterwarnings("ignore")
-from fasterrisk.utils import get_support_indices, get_nonsupport_indices, normalize_X, compute_logisticLoss_from_yXB, compute_logisticLoss_from_ExpyXB, compute_logisticLoss_from_X_y_beta0_betas
+# import warnings
+# warnings.filterwarnings("ignore")
+from fasterrisk.utils import get_support_indices, get_nonsupport_indices, compute_logisticLoss_from_ExpyXB
 from fasterrisk.base_model import logRegModel
    
 class sparseLogRegModel(logRegModel):
     def __init__(self, X, y, lambda2=1e-8, intercept=True, original_lb=-5, original_ub=5):
         super().__init__(X=X, y=y, lambda2=lambda2, intercept=intercept, original_lb=original_lb, original_ub=original_ub)
    
-    def expand_parent_i_support_via_OMP_by_1(self, i, sub_beam_size=20):
+    def expand_parent_i_support_via_OMP_by_1(self, i, child_size=10):
+        """For parent solution i, generate [child_size] child solutions
 
+        Parameters
+        ----------
+        i : int
+            index of the parent solution
+        child_size : int, optional
+            how many child solutions to generate based on parent solution i, by default 10
+        """
         non_support = get_nonsupport_indices(self.betas_arr_parent[i])
         support = get_support_indices(self.betas_arr_parent[i])
-
 
         grad_on_non_support = self.yXT[non_support].dot(np.reciprocal(1+self.ExpyXB_arr_parent[i]))
         abs_grad_on_non_support = np.abs(grad_on_non_support)
 
-        num_new_js = min(sub_beam_size, len(non_support))
+        num_new_js = min(child_size, len(non_support))
         new_js = non_support[np.argsort(-abs_grad_on_non_support)][:num_new_js]
-        child_start, child_end = i*sub_beam_size, i*sub_beam_size + num_new_js
+        child_start, child_end = i*child_size, i*child_size + num_new_js
 
         self.ExpyXB_arr_child[child_start:child_end] = self.ExpyXB_arr_parent[i, :] # (num_new_js, n)
         self.betas_arr_child[child_start:child_end, non_support] = 0
@@ -55,23 +62,41 @@ class sparseLogRegModel(logRegModel):
                 self.ExpyXB_arr_child[child_id], self.beta0_arr_child[child_id], self.betas_arr_child[child_id] = self.finetune_on_current_support(self.ExpyXB_arr_child[child_id], self.beta0_arr_child[child_id], self.betas_arr_child[child_id])
                 self.loss_arr_child[child_id] = compute_logisticLoss_from_ExpyXB(self.ExpyXB_arr_child[child_id])
 
-    def beamSearch_multipleSupports_via_OMP_by_1(self, beam_size=10, sub_beam_size=20):
+    def beamSearch_multipleSupports_via_OMP_by_1(self, parent_size=10, child_size=10):
+        """Each parent solution generates [child_size] child solutions, so there will be [parent_size] * [child_size] number of total child solutions. However, only the top [parent_size] child solutions are retained as parent solutions for the next level i+1.
+
+        Parameters
+        ----------
+        parent_size : int, optional
+            how many top solutions to retain at each level, by default 10
+        child_size : int, optional
+            how many child solutions to generate based on each parent solution, by default 10
+        """
         self.loss_arr_child.fill(1e12)
 
         for i in range(self.num_parent):
-            self.expand_parent_i_support_via_OMP_by_1(i, sub_beam_size=sub_beam_size)
+            self.expand_parent_i_support_via_OMP_by_1(i, child_size=child_size)
 
-        child_indices = np.argsort(self.loss_arr_child)[:beam_size] # get indices of children which have the smallest losses
+        child_indices = np.argsort(self.loss_arr_child)[:parent_size] # get indices of children which have the smallest losses
         num_child_indices = len(child_indices)
         self.ExpyXB_arr_parent[:num_child_indices], self.beta0_arr_parent[:num_child_indices], self.betas_arr_parent[:num_child_indices] = self.ExpyXB_arr_child[child_indices], self.beta0_arr_child[child_indices], self.betas_arr_child[child_indices]
 
         self.num_parent = num_child_indices
 
-    def get_sparse_sol_via_OMP(self, k=0, beam_size=10, sub_beam_size=20):
-        # get a sparse solution with specificed sparsity level=5
-        # through orthogonal matching pursuit method
+    def get_sparse_sol_via_OMP(self, k, parent_size=10, child_size=10):
+        """Get sparse solution through beam search and orthogonal matching pursuit (OMP), for level i, each parent solution generates [child_size] child solutions, so there will be [parent_size] * [child_size] number of total child solutions. However, only the top [parent_size] child solutions are retained as parent solutions for the next level i+1.
+
+        Parameters
+        ----------
+        k : int
+            number of nonzero coefficients for the final sparse solution
+        parent_size : int, optional
+            how many top solutions to retain at each level, by default 10
+        child_size : int, optional
+            how many child solutions to generate based on each parent solution, by default 10
+        """
         nonzero_indices_set = set(np.where(np.abs(self.betas) > 1e-9)[0])
-        print("get_sparse_sol_via_OMP, initial support is:", nonzero_indices_set)
+        # print("get_sparse_sol_via_OMP, initial support is:", nonzero_indices_set)
         zero_indices_set = set(range(self.p)) - nonzero_indices_set
         num_nonzero = len(nonzero_indices_set)
 
@@ -87,27 +112,25 @@ class sparseLogRegModel(logRegModel):
             self.ExpyXB *= np.exp(self.y * self.beta0)
 
         # create beam search parent
-        self.ExpyXB_arr_parent = np.zeros((beam_size, self.n))
-        self.beta0_arr_parent = np.zeros((beam_size, ))
-        self.betas_arr_parent = np.zeros((beam_size, self.p))
+        self.ExpyXB_arr_parent = np.zeros((parent_size, self.n))
+        self.beta0_arr_parent = np.zeros((parent_size, ))
+        self.betas_arr_parent = np.zeros((parent_size, self.p))
         self.ExpyXB_arr_parent[0, :] = self.ExpyXB[:]
         self.beta0_arr_parent[0] = self.beta0
         self.betas_arr_parent[0, :] = self.betas[:]
         self.num_parent = 1
 
-        # create beam search children. parent[i]->child[i*sub_beam_size:(i+1)*sub_beam_size]
-        total_sub_beam_size = beam_size * sub_beam_size
-        self.ExpyXB_arr_child = np.zeros((total_sub_beam_size, self.n))
-        self.beta0_arr_child = np.zeros((total_sub_beam_size, ))
-        self.betas_arr_child = np.zeros((total_sub_beam_size, self.p))
-        self.isMasked_arr_child = np.ones((total_sub_beam_size, ), dtype=bool)
-        self.loss_arr_child = 1e12 * np.ones((total_sub_beam_size, ))
+        # create beam search children. parent[i]->child[i*child_size:(i+1)*child_size]
+        total_child_size = parent_size * child_size
+        self.ExpyXB_arr_child = np.zeros((total_child_size, self.n))
+        self.beta0_arr_child = np.zeros((total_child_size, ))
+        self.betas_arr_child = np.zeros((total_child_size, self.p))
+        self.isMasked_arr_child = np.ones((total_child_size, ), dtype=bool)
+        self.loss_arr_child = 1e12 * np.ones((total_child_size, ))
         self.forbidden_support = set()
 
         while num_nonzero < min(k, self.p):
             num_nonzero += 1
+            self.beamSearch_multipleSupports_via_OMP_by_1(parent_size=parent_size, child_size=child_size)
 
-            self.beamSearch_multipleSupports_via_OMP_by_1(beam_size=beam_size, sub_beam_size=sub_beam_size)
-
-        # then optimize on the new expanded support
         self.ExpyXB, self.beta0, self.betas = self.ExpyXB_arr_parent[0], self.beta0_arr_parent[0], self.betas_arr_parent[0]

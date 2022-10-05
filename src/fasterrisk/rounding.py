@@ -1,10 +1,9 @@
 import numpy as np
 import sys
-import warnings
-warnings.filterwarnings("ignore")
+# import warnings
+# warnings.filterwarnings("ignore")
 
-from fasterrisk.utils import get_support_indices, get_nonsupport_indices, compute_logisticLoss_from_betas_and_yX, get_acc_and_auc
-
+from fasterrisk.utils import get_support_indices, compute_logisticLoss_from_betas_and_yX 
 
 class starRaySearchModel:
     def __init__(self, X, y, num_ray_search=20, early_stop_tolerance=0.001):
@@ -22,6 +21,18 @@ class starRaySearchModel:
         self.early_stop_tolerance = early_stop_tolerance
     
     def get_multipliers_for_line_search(self, betas):
+        """Get an array of multipliers to try for line search
+
+        Parameters
+        ----------
+        betas : float[:]
+            a given solution with shape = (1+p, ) assuming the first entry is the intercept
+
+        Returns
+        -------
+        multipliers : float[:]
+            an array of candidate multipliers with shape = (num_ray_search, )
+        """
         largest_multiplier = min(self.abs_coef_ub/np.max(np.abs(betas[1:])), self.abs_intercept_ub/abs(betas[0]))
         if largest_multiplier > 1:
             multipliers = np.linspace(1, largest_multiplier, self.num_ray_search)
@@ -29,45 +40,21 @@ class starRaySearchModel:
             multipliers = np.linspace(1, 0.5, self.num_ray_search)
         return multipliers
     
-    def line_search_scale_and_round(self, betas):
-        nonzero_indices = get_support_indices(betas)
-        num_nonzero = len(nonzero_indices)
-
-        X_sub = self.X[:, nonzero_indices]
-        yX_sub = self.yX[:, nonzero_indices]
-        betas_sub = betas[nonzero_indices]
-
-        multipliers = self.get_multipliers_for_line_search(betas_sub)
-
-        loss_continuous_betas = compute_logisticLoss_from_betas_and_yX(betas_sub, yX_sub)
-        
-        best_multiplier = 1.0
-        best_loss = 1e12
-        best_betas_sub = np.zeros((num_nonzero, ))
-
-        for multiplier in multipliers:
-            betas_sub_scaled = betas_sub * multiplier
-            yX_sub_scaled = yX_sub / multiplier
-
-            betas_sub_scaled = self.auxilliary_rounding(betas_sub_scaled, yX_sub_scaled)
-
-            tmp_loss = compute_logisticLoss_from_betas_and_yX(betas_sub_scaled / multiplier, yX_sub)
-
-            if tmp_loss < best_loss:
-                best_loss = tmp_loss
-                best_multiplier = multiplier
-                best_betas_sub[:] = betas_sub_scaled[:]
-
-            if (tmp_loss - loss_continuous_betas) / loss_continuous_betas < self.early_stop_tolerance:
-                break
-
-        acc, auc = get_acc_and_auc(best_betas_sub, X_sub, self.y)
-        best_betas = np.zeros((self.p, ))
-        best_betas[nonzero_indices] = best_betas_sub
-
-        return best_multiplier, best_betas, acc, auc, best_loss
-
     def star_ray_search_scale_and_round(self, sparse_diverse_set_continuous):
+        """For each continuous solution in the sparse diverse pool, find the best multiplier and integer solution. Return the best integer solutions and the corresponding multipliers in the sparse diverse pool
+
+        Parameters
+        ----------
+        sparse_diverse_set_continuous : float[:, :]
+            an array of continuous solution with shape = (m, 1+p) assuming the first entry in each row is the intercept
+
+        Returns
+        -------
+        multipliers : float[:]
+            best multiplier for each continuous solution with shape = (m, )
+        best_betas : float[:, :]
+            best integer solution for each continuous solution with shape = (m, 1+p)
+        """
         sparse_diverse_set_integer = np.zeros(sparse_diverse_set_continuous.shape)
         multipliers = np.zeros((sparse_diverse_set_integer.shape[1]))
 
@@ -77,10 +64,24 @@ class starRaySearchModel:
         return multipliers, sparse_diverse_set_integer
 
     def line_search_scale_and_round_new(self, betas):
+        """For a given solution betas, multiply the solution with different multipliers and round each scaled solution to integers. Return the best integer solution based on the logistic loss.
+
+        Parameters
+        ----------
+        betas : float[:]
+            a given solution with shape = (1+p, ) assuming the first entry is the intercept
+
+        Returns
+        -------
+        best_multiplier : float
+            best multiplier among all pairs of (multiplier, integer_solution)
+        best_betas : float[:]
+            best integer solution among all pairs of (multiplier, integer_solution)
+        """
         nonzero_indices = get_support_indices(betas)
         num_nonzero = len(nonzero_indices)
 
-        X_sub = self.X[:, nonzero_indices]
+        # X_sub = self.X[:, nonzero_indices]
         yX_sub = self.yX[:, nonzero_indices]
         betas_sub = betas[nonzero_indices]
 
@@ -114,12 +115,32 @@ class starRaySearchModel:
         return best_multiplier, best_betas
 
     def get_rounding_distance_and_dimension(self, betas):
+        """For each dimension, get distances from the real coefficient to the rounded-up integer and the rounded-down integer
+
+        Parameters
+        ----------
+        betas : float[:]
+            current continuous (real-valued) solution
+
+        Returns
+        -------
+        betas_floor : float[:]
+            rounded-down coefficients
+        dist_from_start_to_floor: float[:]
+            distance from the real coefficient to the rounded-down integer
+        betas_ceil : float[:] 
+            rounded-up coefficients
+        dist_from_start_to_ceil: float[:] 
+            distance from the real coefficient to the rounded-up integer
+        dimensions_to_round: int[:]
+            array of indices where the coefficients are not integers to begin with and upon which we should do rounding
+        """
         betas_floor = np.floor(betas)
-        floor_is_zero = np.equal(betas_floor, 0)
+        # floor_is_zero = np.equal(betas_floor, 0)
         dist_from_start_to_floor = betas_floor - betas
 
         betas_ceil = np.ceil(betas)
-        ceil_is_zero = np.equal(betas_ceil, 0)
+        # ceil_is_zero = np.equal(betas_ceil, 0)
         dist_from_start_to_ceil = betas_ceil - betas
 
         dimensions_to_round = np.flatnonzero(np.not_equal(betas_floor, betas_ceil)).tolist()
@@ -127,6 +148,20 @@ class starRaySearchModel:
         return betas_floor, dist_from_start_to_floor, betas_ceil, dist_from_start_to_ceil, dimensions_to_round
 
     def auxilliary_rounding(self, betas, yX):
+        """Round the solutions to intgers according to the auxilliary loss proposed in the paper
+
+        Parameters
+        ----------
+        betas : float[:]
+            current continuous (real-valued) solution
+        yX : float[:, :]
+            yX[i, j] = y[i] * X[i, j]
+
+        Returns
+        -------
+        integer_beta : float[:]
+            rounded integer solution
+        """
         n_local, p_local = yX.shape[0], yX.shape[1]
 
         betas_floor, dist_from_start_to_floor, betas_ceil, dist_from_start_to_ceil, dimensions_to_round = self.get_rounding_distance_and_dimension(betas)
