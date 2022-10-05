@@ -10,15 +10,13 @@ $ pip install fasterrisk
 
 ## Usage
 
-- TODO
-
-## User Interface Framework Sketch
-
 Two classes:
 - RiskScoreOptimizer
-```
-m = RiskScoreOptimizer(X_train=X_train, y_train=y_train, k=k, ...)
+```python
+# initialize a risk score optimizer
+m = RiskScoreOptimizer(X_train=X_train, y_train=y_train, k=k)
 
+# perform optimization
 m.optimize()
 
 # get all top m solutions from the final diverse pool
@@ -35,13 +33,17 @@ m.print_model_card(model_index=0)
 ```
 
 - RiskScoreClassifier
-```
+```python
+# create a classifier
 clf = RiskScoreClassifier(multiplier=multiplier, intercept=intercept, coefficients=coefficients)
 
+# get the predicted label
 y_pred = clf.predict(X = X_test)
 
-y_prob = clf.predict_prob(X = X_test)
+# get the probability of predicting y[i] with label +1
+y_pred_prob = clf.predict_prob(X = X_test)
 
+# compute the logistic loss
 logisticLoss = clf.compute_logisticLoss(X = X_train, y = y_train)
 ```
 
