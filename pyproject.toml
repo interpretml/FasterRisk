@@ -2,9 +2,13 @@
 name = "fasterrisk"
 version = "0.1.0"
 description = "Create sparse and accurate risk scoring systems!"
-authors = ["Jiachang Liu"]
+authors = ["Jiachang Liu <jiachang.liu@duke.edu>"]
+maintainers = ["Jiachang Liu <jiachang.liu@duke.edu>"]
 license = "BSD 3-Clause"
 readme = "README.md"
+homepage = "https://python-poetry.org/"
+repository = "https://github.com/jiachangliu/FasterRisk"
+documentation = "https://python-poetry.org/docs/" 
 
 [tool.poetry.dependencies]
 python = "^3.8"
