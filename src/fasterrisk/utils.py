@@ -55,3 +55,8 @@ def compute_auc(betas, X, y):
     fpr, tpr, thresholds = sklearn.metrics.roc_curve(y, y_pred)
     auc = sklearn.metrics.auc(fpr, tpr)
     return auc
+
+def isEqual_upTo_8decimal(a, b):
+    if np.isscalar(a):
+        return abs(a - b) < 1e-8
+    return np.max(np.abs(a - b)) < 1e-8
