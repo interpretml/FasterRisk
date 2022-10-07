@@ -1,4 +1,6 @@
 tests/train_test_data.npz
+tests/train_test_data_noIntercept.npz
+tests/preprocessing_new.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
