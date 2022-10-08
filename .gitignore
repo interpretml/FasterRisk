@@ -2,6 +2,7 @@ tests/train_test_data.npz
 tests/train_test_data_noIntercept.npz
 tests/train_test_data_withIntercept.npz
 tests/*.npz
+tests/*.csv
 tests/preprocessing_new.py
 
 # Byte-compiled / optimized / DLL files
