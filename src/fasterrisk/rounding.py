@@ -3,11 +3,12 @@ import sys
 # import warnings
 # warnings.filterwarnings("ignore")
 
-from fasterrisk.utils import get_support_indices, compute_logisticLoss_from_betas_and_yX 
+from fasterrisk.utils import get_support_indices, compute_logisticLoss_from_betas_and_yX, insertIntercept_asFirstColOf_X
 
 class starRaySearchModel:
     def __init__(self, X, y, num_ray_search=20, early_stop_tolerance=0.001):
-        self.X = X
+        # self.X = X
+        self.X = insertIntercept_asFirstColOf_X(X)
         self.y = y.reshape(-1)
         self.yX = self.y.reshape(-1, 1) * self.X
 

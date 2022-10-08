@@ -1,9 +1,11 @@
 import numpy as np
+import sklearn.metrics
 
 from fasterrisk.sparseBeamSearch import sparseLogRegModel
 from fasterrisk.sparseDiversePool import sparseDiversePoolLogRegModel
 from fasterrisk.rounding import starRaySearchModel
-from fasterrisk.utils import compute_logisticLoss_from_X_y_beta0_betas
+
+from fasterrisk.utils import compute_logisticLoss_from_X_y_beta0_betas, isEqual_upTo_8decimal, isEqual_upTo_16decimal
 
 class RiskScoreOptimizer:
     def __init__(self, X, y, k, select_top_m=50, lb=-5, ub=5, \
@@ -130,7 +132,7 @@ class RiskScoreClassifier:
         y_pred : float[:]
             predicted labels (+1.0 or -1.0) with shape (n, )
         """
-        y_score = self.scaled_intercept + X.dot(self.scaled_coefficients)
+        y_score = (self.intercept + X.dot(self.coefficients)) / self.multiplier # numpy dot.() has some floating point error issues, so we avoid using self.scaled_intercept and self.scaled_coefficients directly
         y_pred = 2 * (y_score > 0) - 1
         return y_pred
 
@@ -147,8 +149,9 @@ class RiskScoreClassifier:
         y_pred_prob : float[:]
             probabilities of each sample y_i to be +1 with shape (n, )
         """
-        y_score = self.scaled_intercept + X.dot(self.scaled_coefficients)
+        y_score = (self.intercept + X.dot(self.coefficients)) / self.multiplier # numpy dot.() has some floating point error issues, so we avoid using self.scaled_intercept and self.scaled_coefficients directly
         y_pred_prob = 1/(1+np.exp(-y_score))
+
         return y_pred_prob
 
     def compute_logisticLoss(self, X, y):
@@ -167,3 +170,13 @@ class RiskScoreClassifier:
             total logistic loss, loss = $sum_{i=1}^n log(1+exp(-y_i * (beta0 + X[i, :] @ beta) / multiplier))$
         """
         return compute_logisticLoss_from_X_y_beta0_betas(X, y, self.scaled_intercept, self.scaled_coefficients)
+
+    def get_acc_and_auc(self, X, y):
+        y_pred = self.predict(X)
+        # print(y_pred.shape, y.shape)
+        acc = np.sum(y_pred == y) / len(y)
+        y_pred_prob = self.predict_prob(X)
+
+        fpr, tpr, thresholds = sklearn.metrics.roc_curve(y_true=y, y_score=y_pred_prob, drop_intermediate=False)
+        auc = sklearn.metrics.auc(fpr, tpr)
+        return acc, auc

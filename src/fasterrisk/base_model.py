@@ -6,11 +6,13 @@ from fasterrisk.utils import normalize_X, compute_logisticLoss_from_ExpyXB
 
 class logRegModel:
     def __init__(self, X, y, lambda2=1e-8, intercept=True, original_lb=-5, original_ub=5):
-        if intercept is True:
-            self.X = X[:, 1:] # (n, p)
-        else:
-            print("need to provide an intercept!")
-            sys.exit()
+        # if intercept is True:
+        #     self.X = X[:, 1:] # (n, p)
+        # else:
+        #     print("need to provide an intercept!")
+        #     sys.exit()
+        self.X = X
+        
         self.X_normalized, self.X_mean, self.X_norm, self.scaled_feature_indices = normalize_X(self.X)
         self.n, self.p = self.X_normalized.shape
         self.y = y.reshape(-1).astype(float)
