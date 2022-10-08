@@ -1,5 +1,4 @@
 import numpy as np
-from fasterrisk.utils import get_acc_and_auc
 import time
 
 from fasterrisk.fasterrisk import RiskScoreOptimizer, RiskScoreClassifier
@@ -22,7 +21,8 @@ def save_to_dict(int_sols_dict, multiplier, int_sol, train_acc, test_acc, train_
 
 def test_check_solutions_interface():
     # import data
-    train_test_data = np.load("tests/train_test_data.npz", allow_pickle=True)
+    # train_test_data = np.load("tests/train_test_data.npz", allow_pickle=True)
+    train_test_data = np.load("tests/train_test_data_noIntercept.npz", allow_pickle=True)
     
     X_train, y_train, X_test, y_test = train_test_data["X_train"], train_test_data["y_train"], train_test_data["X_test"], train_test_data["y_test"] 
     y_train = y_train.reshape(-1)
@@ -54,12 +54,13 @@ def test_check_solutions_interface():
     for i in range(len(multipliers)):
         multiplier = multipliers[i]
         integer_sol = sparse_diverse_set_integer[:, i]
-        train_acc, train_auc = get_acc_and_auc(integer_sol, X_train, y_train)
-        test_acc, test_auc = get_acc_and_auc(integer_sol, X_test, y_test)
 
         RiskScoreClassifier_m = RiskScoreClassifier(multiplier, integer_sol[0], integer_sol[1:])
-        logisticLoss = RiskScoreClassifier_m.compute_logisticLoss(X_train[:, 1:], y_train)
+        logisticLoss = RiskScoreClassifier_m.compute_logisticLoss(X_train, y_train)
         
+        train_acc, train_auc = RiskScoreClassifier_m.get_acc_and_auc(X_train, y_train)
+        test_acc, test_auc = RiskScoreClassifier_m.get_acc_and_auc(X_test, y_test)
+
         save_to_dict(int_sols_dict, multiplier, integer_sol, train_acc, test_acc, train_auc, test_auc, logisticLoss)
 
     int_sols_dict["logisticLosses"] = np.asarray(int_sols_dict["logisticLosses"])
@@ -72,6 +73,6 @@ def test_check_solutions_interface():
   
     assert len(int_sols_dict["logisticLosses"]) == len(expected_logisticLosses), "logistcLosses do not have the expected length"
     assert np.max(np.abs(int_sols_dict["logisticLosses"] - expected_logisticLosses)) < 1e-8, "logisticLosses values are not correct"
+    assert np.max(np.abs(int_sols_dict["multipliers"] - expected_multipliers)) < 1e-8, "multipliers values are not correct"
     assert np.max(np.abs(int_sols_dict["test_accs"] - expected_test_accs)) < 1e-8, "test_accs values are not correct"
     assert np.max(np.abs(int_sols_dict["test_aucs"] - expected_test_aucs)) < 1e-8, "test_aucs values are not correct"
-    assert np.max(np.abs(int_sols_dict["multipliers"] - expected_multipliers)) < 1e-8, "multipliers values are not correct"
