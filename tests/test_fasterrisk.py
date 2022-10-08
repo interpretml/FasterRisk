@@ -75,3 +75,6 @@ def test_check_solutions_interface():
     assert np.max(np.abs(int_sols_dict["multipliers"] - expected_multipliers)) < 1e-8, "multipliers values are not correct"
     assert np.max(np.abs(int_sols_dict["test_accs"] - expected_test_accs)) < 1e-8, "test_accs values are not correct"
     assert np.max(np.abs(int_sols_dict["test_aucs"] - expected_test_aucs)) < 1e-8, "test_aucs values are not correct"
+
+if __name__ == "__main__":
+    test_check_solutions_interface()
