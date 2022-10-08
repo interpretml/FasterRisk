@@ -104,7 +104,7 @@ class sparseLogRegModel(logRegModel):
             return
 
         # if there is no warm start solution, initialize beta0 analytically
-        if len(nonzero_indices_set) == 0:
+        if (self.intercept) and (len(nonzero_indices_set) == 0):
             y_sum = np.sum(self.y)
             num_y_pos_1 = (y_sum + self.n)/2
             num_y_neg_1 = self.n - num_y_pos_1
