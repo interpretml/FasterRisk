@@ -31,12 +31,11 @@ def get_expected_last_5_integer_solutions():
 
 def test_rounding():
     # import data
-    # train_test_data = np.load("tests/train_test_data.npz", allow_pickle=True)
-    train_test_data = np.load("tests/train_test_data_noIntercept.npz", allow_pickle=True)
+    train_test_data = np.load("tests/train_test_data.npz", allow_pickle=True)
     
     X_train, y_train, X_test, y_test = train_test_data["X_train"], train_test_data["y_train"], train_test_data["X_test"], train_test_data["y_test"] 
-    y_train = y_train.reshape(-1)
-    y_test = y_test.reshape(-1)
+    y_train = y_train
+    y_test = y_test
     
     lambda2 = 1e-8
     sparsity = 5
