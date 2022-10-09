@@ -9,11 +9,12 @@ $ pip install fasterrisk
 ```
 
 ## Package Development ToDo List (ongoing)
-- [ ] Fix the intercept boolean parameter in logRegModel module
+- [x] Fix the intercept boolean parameter in logRegModel module
+- [x] Reupload data to Google Drive with .csv files and colnames included
+- [x] Implement print_model_card() function in the fasterrisk module.
+- [x] Add the usage of print_model_card() in example jupyter notebook.
 - [ ] Fix un-transpose the solutions returned by sparseDiversePool 
-- [ ] Reupload data to Google Drive with .csv files and colnames included
-- [ ] Implement print_model_card() function in the fasterrisk module.
-- [ ] Add the usage of print_model_card() in example jupyter notebook.
+- [ ] Revise Usage section writeup in the README
 - [ ] Upload to TestPyPI to test the package
 - [ ] Add citation bib file at the bottom once the article is available on Google Scholar
 - [ ] Add underscore in front of internal functions in the modules?
