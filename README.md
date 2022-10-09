@@ -13,7 +13,7 @@ $ pip install fasterrisk
 - [x] Reupload data to Google Drive with .csv files and colnames included
 - [x] Implement print_model_card() function in the fasterrisk module.
 - [x] Add the usage of print_model_card() in example jupyter notebook.
-- [ ] Fix un-transpose the solutions returned by sparseDiversePool 
+- [x] Fix un-transpose the solutions returned by sparseDiversePool 
 - [ ] Revise Usage section writeup in the README
 - [ ] Upload to TestPyPI to test the package
 - [ ] Add citation bib file at the bottom once the article is available on Google Scholar
@@ -26,29 +26,32 @@ $ pip install fasterrisk
 Two classes:
 - RiskScoreOptimizer
 ```python
+sparsity = 5 # produce a risk score model with 5 nonzero coefficients 
+
+# read in data
+X_train, y_train = ...
+
 # initialize a risk score optimizer
-m = RiskScoreOptimizer(X_train=X_train, y_train=y_train, k=k)
+m = RiskScoreOptimizer(X = X_train, y = y_train, k = sparsity)
 
 # perform optimization
 m.optimize()
 
 # get all top m solutions from the final diverse pool
-multipliers, intercepts, coefficients = m.get_models(model_index=None) # get m solutions from the diverse pool; Specifically, multipliers.shape=(m, ), intercepts.shape=(m, ), coefficients.shape=(m, p)
+arr_multipliers, arr_intercepts, arr_coefficients = m.get_models() # get m solutions from the diverse pool; Specifically, multipliers.shape=(m, ), intercepts.shape=(m, ), coefficients.shape=(m, p)
 
 # get the first solution from the final diverse pool by passing an optional model_index; models are ranked in order of increasing logistic loss
-multiplier, intercept, coefficient = m.get_models(model_index=0) # get the first solutions from the diverse pool; Specifically, multiplier.shape=(1, ), intercept.shape=(1, ), coefficients.shape=(p, )
+multiplier, intercept, coefficients = m.get_models(model_index = 0) # get the first solutions from the diverse pool; Specifically, multiplier.shape=(1, ), intercept.shape=(1, ), coefficients.shape=(p, )
 
-# print all model cards from the final diverse pool
-m.print_model_card(model_index=None) 
-
-# print the first model card from the final diverse pool
-m.print_model_card(model_index=0) 
 ```
 
 - RiskScoreClassifier
 ```python
+# Read in data
+X_test, y_test, X_featureNames = ... # X_featureNames is a list of strings, each of which is the feature name
+
 # create a classifier
-clf = RiskScoreClassifier(multiplier=multiplier, intercept=intercept, coefficients=coefficients)
+clf = RiskScoreClassifier(multiplier = multiplier, intercept = intercept, coefficients = coefficients, featureNames = featureNames)
 
 # get the predicted label
 y_pred = clf.predict(X = X_test)
@@ -57,7 +60,13 @@ y_pred = clf.predict(X = X_test)
 y_pred_prob = clf.predict_prob(X = X_test)
 
 # compute the logistic loss
-logisticLoss = clf.compute_logisticLoss(X = X_train, y = y_train)
+logisticLoss_train = clf.compute_logisticLoss(X = X_train, y = y_train)
+
+# get accuracy and area under the ROC curve (AUC)
+acc_test, auc_test = clf.get_acc_and_auc(X = X_test, y = y_test) 
+
+# print the risk score model card
+m.print_model_card() 
 ```
 
 
