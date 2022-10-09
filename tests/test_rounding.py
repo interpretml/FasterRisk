@@ -21,13 +21,13 @@ def get_expected_last_5_multipliers():
     return np.asarray([1.79963122, 1.48820364, 1.77281803, 1.59960591, 1.60098164])
 
 def get_expected_last_5_integer_solutions():
-    expected_last_5_solutions = np.zeros((37, 5))
+    expected_last_5_solutions = np.zeros((5, 37))
 
-    expected_last_5_solutions[:, 0][np.asarray([ 0,  2, 10, 14, 21, 28], dtype=int)] = np.asarray([-3, -2, -3, -5,  4,  1.])
-    expected_last_5_solutions[:, 1][np.asarray([ 0,  2, 10, 14, 21, 34], dtype=int)] = np.asarray([-2, -2, -2, -4,  3, -1.])
-    expected_last_5_solutions[:, 2][np.asarray([ 0,  2, 10, 14, 21, 30], dtype=int)] = np.asarray([-3, -2, -3, -5,  4,  1.])
-    expected_last_5_solutions[:, 3][np.asarray([ 0,  2, 10, 14, 21, 24], dtype=int)] = np.asarray([-2, -2, -2, -4,  3, -1.])
-    expected_last_5_solutions[:, 4][np.asarray([ 0,  2, 10, 14, 21, 22], dtype=int)] = np.asarray([-3, -2, -2, -4,  4,  1.])
+    expected_last_5_solutions[0][np.asarray([ 0,  2, 10, 14, 21, 28], dtype=int)] = np.asarray([-3, -2, -3, -5,  4,  1.])
+    expected_last_5_solutions[1][np.asarray([ 0,  2, 10, 14, 21, 34], dtype=int)] = np.asarray([-2, -2, -2, -4,  3, -1.])
+    expected_last_5_solutions[2][np.asarray([ 0,  2, 10, 14, 21, 30], dtype=int)] = np.asarray([-3, -2, -3, -5,  4,  1.])
+    expected_last_5_solutions[3][np.asarray([ 0,  2, 10, 14, 21, 24], dtype=int)] = np.asarray([-2, -2, -2, -4,  3, -1.])
+    expected_last_5_solutions[4][np.asarray([ 0,  2, 10, 14, 21, 22], dtype=int)] = np.asarray([-3, -2, -2, -4,  4,  1.])
     return expected_last_5_solutions
 
 def test_rounding():
@@ -59,33 +59,27 @@ def test_rounding():
 
 
     sparseDiversePoolLogRegModel_object.warm_start_from_beta0_betas_ExpyXB(beta0 = beta0, betas = betas, ExpyXB = ExpyXB)
-    sparse_diverse_set_continuous = sparseDiversePoolLogRegModel_object.get_sparse_diverse_set(gap_tolerance=sparseDiversePool_gap_tolerance, select_top_m=sparseDiversePool_select_top_m, maxAttempts=maxAttempts)
+    sparseDiversePool_beta0, sparsediversePool_betas = sparseDiversePoolLogRegModel_object.get_sparseDiversePool(gap_tolerance=sparseDiversePool_gap_tolerance, select_top_m=sparseDiversePool_select_top_m, maxAttempts=maxAttempts)
 
 
     starRaySearchModel_object = starRaySearchModel(X = X_train, y = y_train, num_ray_search=num_ray_search, early_stop_tolerance=lineSearch_early_stop_tolerance)
 
-    multipliers, sparse_diverse_set_integer = starRaySearchModel_object.star_ray_search_scale_and_round(sparse_diverse_set_continuous)
+    multipliers, sparseDiversePool_beta0_integer, sparseDiversePool_betas_integer = starRaySearchModel_object.star_ray_search_scale_and_round(sparseDiversePool_beta0, sparsediversePool_betas)
 
-    multipliers_last_5, sparse_diverse_set_integer_last_5 = multipliers[-5:], sparse_diverse_set_integer[:, -5:]
+    multipliers_last_5, sparseDiversePool_beta0_integer_last_5, sparseDiversePool_betas_integer_last_5 = multipliers[-5:], sparseDiversePool_beta0_integer[-5:], sparseDiversePool_betas_integer[-5:, :]
 
-    # print(multipliers_last_5)
-
-    # for j in range(5):
-    #     nonzero_indices = np.where(np.abs(sparse_diverse_set_integer_last_5[:, j]) > 1e-8)[0]
-    #     print(nonzero_indices)
-        
-    #     sparse_coefficients = sparse_diverse_set_integer_last_5[nonzero_indices, j]
-
-        # print(sparse_coefficients)
-    
-    expected_last_5_integer_solutions = get_expected_last_5_integer_solutions()
+    print(sparseDiversePool_beta0[-5:])
+    print(sparseDiversePool_beta0_integer)
 
 
-    assert isEqual_upTo_8decimal(expected_last_5_integer_solutions, sparse_diverse_set_integer_last_5), "last 5 integer coefficients are not correct!"
-
+    # check answers for correctness
     expected_last_5_multipliers = get_expected_last_5_multipliers()
-
     assert isEqual_upTo_8decimal(expected_last_5_multipliers, multipliers_last_5), "last 5 multipliers are not correct!"
+
+    expected_last_5_integer_solutions = get_expected_last_5_integer_solutions()
+    assert isEqual_upTo_8decimal(expected_last_5_integer_solutions[:, 0], sparseDiversePool_beta0_integer_last_5), "intercept of last 5 integer solutions are not correct!"
+    assert isEqual_upTo_8decimal(expected_last_5_integer_solutions[:, 1:], sparseDiversePool_betas_integer_last_5), "coefficients of last 5 integer solutions are not correct!"
+
 
 if __name__ == '__main__':
     test_rounding()

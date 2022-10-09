@@ -72,9 +72,9 @@ class RiskScoreOptimizer:
         
         beta0, betas, ExpyXB = self.sparseLogRegModel_object.get_beta0_betas_ExpyXB()
         self.sparseDiversePoolLogRegModel_object.warm_start_from_beta0_betas_ExpyXB(beta0 = beta0, betas = betas, ExpyXB = ExpyXB)
-        sparse_diverse_set_continuous = self.sparseDiversePoolLogRegModel_object.get_sparse_diverse_set(gap_tolerance=self.sparseDiverseSet_gap_tolerance, select_top_m=self.sparseDiverseSet_select_top_m, maxAttempts=self.sparseDiverseSet_maxAttempts)
+        sparseDiversePool_beta0, sparseDiversePool_betas = self.sparseDiversePoolLogRegModel_object.get_sparseDiversePool(gap_tolerance=self.sparseDiverseSet_gap_tolerance, select_top_m=self.sparseDiverseSet_select_top_m, maxAttempts=self.sparseDiverseSet_maxAttempts)
 
-        self.multipliers, self.sparse_diverse_set_integer = self.starRaySearchModel_object.star_ray_search_scale_and_round(sparse_diverse_set_continuous)
+        self.multipliers, self.sparseDiversePool_beta0_integer, self.sparseDiversePool_betas_integer = self.starRaySearchModel_object.star_ray_search_scale_and_round(sparseDiversePool_beta0, sparseDiversePool_betas)
 
     def get_models(self, model_index=None):
         """get risk score models
@@ -88,12 +88,12 @@ class RiskScoreOptimizer:
         -------
         multipliers : float[:] 
             multipliers with each entry as multipliers[i] 
-        sparse_diverse_set_integer : float[:, :]
-            integer coefficients (intercept included) with each row as an integer solution sparse_diverse_set_integer[i]
+        sparseDiversePool_integer : float[:, :]
+            integer coefficients (intercept included) with each row as an integer solution sparseDiversePool_integer[i]
         """
         if model_index is not None:
-            return self.multipliers[model_index], self.sparse_diverse_set_integer[:, model_index]
-        return self.multipliers, self.sparse_diverse_set_integer
+            return self.multipliers[model_index], self.sparseDiversePool_beta0_integer[model_index], self.sparseDiversePool_betas_integer[model_index]
+        return self.multipliers, self.sparseDiversePool_beta0_integer, self.sparseDiversePool_betas_integer
 
 
 

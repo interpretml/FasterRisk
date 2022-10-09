@@ -9,7 +9,7 @@ class sparseDiversePoolLogRegModel(logRegModel):
     def __init__(self, X, y, lambda2=1e-8, intercept=True, original_lb=-5, original_ub=5):
         super().__init__(X=X, y=y, lambda2=lambda2, intercept=intercept, original_lb=original_lb, original_ub=original_ub)
    
-    def get_sparse_diverse_set(self, gap_tolerance=0.05, select_top_m=10, maxAttempts=50):
+    def get_sparseDiversePool(self, gap_tolerance=0.05, select_top_m=10, maxAttempts=50):
         """For the current sparse solution, get from the sparse diverse pool [select_top_m] solutions, which perform equally well as the current sparse solution. This sparse diverse pool is also called the Rashomon set. We discover new solutions by swapping 1 feature in the support of the current sparse solution.
 
         Parameters
@@ -82,10 +82,10 @@ class sparseDiversePoolLogRegModel(logRegModel):
 
         selected_sparseDiversePool_indices = np.argsort(sparseDiversePool_loss)[:select_top_m]
 
-        tmp_betas = sparseDiversePool_betas[selected_sparseDiversePool_indices]
-        tmp_beta0 = sparseDiversePool_beta0[selected_sparseDiversePool_indices]
+        top_m_original_betas = sparseDiversePool_betas[selected_sparseDiversePool_indices][:, self.scaled_feature_indices] / self.X_norm[self.scaled_feature_indices]
+        top_m_original_beta0 = sparseDiversePool_beta0[selected_sparseDiversePool_indices] - top_m_original_betas.dot(self.X_mean)
 
-        original_sparseDiversePool_solution = np.zeros((1 + self.p, select_top_m))
+        return top_m_original_beta0, top_m_original_betas
 
         original_sparseDiversePool_solution[1:] = sparseDiversePool_betas[selected_sparseDiversePool_indices].T
         original_sparseDiversePool_solution[1+self.scaled_feature_indices] /= self.X_norm[self.scaled_feature_indices].reshape(-1, 1)

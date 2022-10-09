@@ -49,18 +49,20 @@ def test_check_solutions_interface():
     
     int_sols_dict['run_time'] = time.time() - start_time
 
-    multipliers, sparse_diverse_set_integer = RiskScoreOptimizer_m.get_models()
+    multipliers, sparseDiversePool_beta0_integer, sparseDiversePool_betas_integer = RiskScoreOptimizer_m.get_models()
 
     for i in range(len(multipliers)):
         multiplier = multipliers[i]
-        integer_sol = sparse_diverse_set_integer[:, i]
+        beta0_integer = sparseDiversePool_beta0_integer[i]
+        betas_integer = sparseDiversePool_betas_integer[i]
 
-        RiskScoreClassifier_m = RiskScoreClassifier(multiplier, integer_sol[0], integer_sol[1:])
+        RiskScoreClassifier_m = RiskScoreClassifier(multiplier, beta0_integer, betas_integer)
         logisticLoss = RiskScoreClassifier_m.compute_logisticLoss(X_train, y_train)
         
         train_acc, train_auc = RiskScoreClassifier_m.get_acc_and_auc(X_train, y_train)
         test_acc, test_auc = RiskScoreClassifier_m.get_acc_and_auc(X_test, y_test)
 
+        integer_sol = np.insert(betas_integer, 0, beta0_integer)
         save_to_dict(int_sols_dict, multiplier, integer_sol, train_acc, test_acc, train_auc, test_auc, logisticLoss)
 
     int_sols_dict["logisticLosses"] = np.asarray(int_sols_dict["logisticLosses"])

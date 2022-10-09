@@ -41,30 +41,36 @@ class starRaySearchModel:
             multipliers = np.linspace(1, 0.5, self.num_ray_search)
         return multipliers
     
-    def star_ray_search_scale_and_round(self, sparse_diverse_set_continuous):
+    def star_ray_search_scale_and_round(self, sparseDiversePool_beta0_continuous, sparseDiversePool_betas_continuous):
         """For each continuous solution in the sparse diverse pool, find the best multiplier and integer solution. Return the best integer solutions and the corresponding multipliers in the sparse diverse pool
 
         Parameters
         ----------
-        sparse_diverse_set_continuous : float[:, :]
-            an array of continuous solution with shape = (m, 1+p) assuming the first entry in each row is the intercept
+        sparseDiversePool_beta_continuous : float[:]
+            an array of continuous intercept with shape = (m, )
+        sparseDiversePool_betas_continuous : float[:, :]
+            an array of continuous coefficients with shape = (m, p) 
 
         Returns
         -------
         multipliers : float[:]
             best multiplier for each continuous solution with shape = (m, )
+        best_beta0 : float[:]
+            best integer intercept for each continuous solution with shape = (m, )
         best_betas : float[:, :]
-            best integer solution for each continuous solution with shape = (m, 1+p)
+            best integer coefficient for each continuous solution with shape = (m, p)
         """
-        sparse_diverse_set_integer = np.zeros(sparse_diverse_set_continuous.shape)
-        multipliers = np.zeros((sparse_diverse_set_integer.shape[1]))
+        sparseDiversePool_continuous = np.hstack((sparseDiversePool_beta0_continuous.reshape(-1, 1), sparseDiversePool_betas_continuous))
+        
+        sparseDiversePool_integer = np.zeros(sparseDiversePool_continuous.shape)
+        multipliers = np.zeros((sparseDiversePool_integer.shape[0]))
 
         for i in range(len(multipliers)):
-            multipliers[i], sparse_diverse_set_integer[:, i] = self.line_search_scale_and_round_new(sparse_diverse_set_continuous[:, i])
+            multipliers[i], sparseDiversePool_integer[i] = self.line_search_scale_and_round(sparseDiversePool_continuous[i])
         
-        return multipliers, sparse_diverse_set_integer
+        return multipliers, sparseDiversePool_integer[:, 0], sparseDiversePool_integer[:, 1:]
 
-    def line_search_scale_and_round_new(self, betas):
+    def line_search_scale_and_round(self, betas):
         """For a given solution betas, multiply the solution with different multipliers and round each scaled solution to integers. Return the best integer solution based on the logistic loss.
 
         Parameters

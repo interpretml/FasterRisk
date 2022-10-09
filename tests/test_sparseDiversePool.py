@@ -5,13 +5,13 @@ from fasterrisk.sparseDiversePool import sparseDiversePoolLogRegModel
 from fasterrisk.utils import isEqual_upTo_8decimal
 
 def get_expected_last_5_solutions():
-    expected_last_5_solutions = np.zeros((37, 5))
+    expected_last_5_solutions = np.zeros((5, 37))
 
-    expected_last_5_solutions[:, 0][np.asarray([0, 2, 10, 14, 21, 28], dtype=int)] = np.asarray([-1.68640248, -1.24434331, -1.39870223, -2.77834699,  2.22334498, 0.3615457 ])
-    expected_last_5_solutions[:, 1][np.asarray([0, 2, 10, 14, 21, 34], dtype=int)] = np.asarray([-1.47609794, -1.25201535, -1.41247325, -2.7125841 ,  2.37800035, -0.51648603])
-    expected_last_5_solutions[:, 2][np.asarray([0, 2, 10, 14, 21, 30], dtype=int)] = np.asarray([-1.86056571, -1.25398798, -1.39427183, -2.75367946,  2.34725272,  0.4100869 ])
-    expected_last_5_solutions[:, 3][np.asarray([0, 2, 10, 14, 21, 24], dtype=int)] = np.asarray([-1.24597583, -1.18031056, -1.3953493 , -2.75671816,  2.09374404, -0.53623595])
-    expected_last_5_solutions[:, 4][np.asarray([0, 2, 10, 14, 21, 22], dtype=int)] = np.asarray([-1.72065552, -1.19777292, -1.39309149, -2.75388333,  2.56853701,  0.48178379])
+    expected_last_5_solutions[0][np.asarray([0, 2, 10, 14, 21, 28], dtype=int)] = np.asarray([-1.68640248, -1.24434331, -1.39870223, -2.77834699,  2.22334498, 0.3615457 ])
+    expected_last_5_solutions[1][np.asarray([0, 2, 10, 14, 21, 34], dtype=int)] = np.asarray([-1.47609794, -1.25201535, -1.41247325, -2.7125841 ,  2.37800035, -0.51648603])
+    expected_last_5_solutions[2][np.asarray([0, 2, 10, 14, 21, 30], dtype=int)] = np.asarray([-1.86056571, -1.25398798, -1.39427183, -2.75367946,  2.34725272,  0.4100869 ])
+    expected_last_5_solutions[3][np.asarray([0, 2, 10, 14, 21, 24], dtype=int)] = np.asarray([-1.24597583, -1.18031056, -1.3953493 , -2.75671816,  2.09374404, -0.53623595])
+    expected_last_5_solutions[4][np.asarray([0, 2, 10, 14, 21, 22], dtype=int)] = np.asarray([-1.72065552, -1.19777292, -1.39309149, -2.75388333,  2.56853701,  0.48178379])
     return expected_last_5_solutions
 
 def test_sparseDiversePool():
@@ -43,22 +43,18 @@ def test_sparseDiversePool():
 
 
     sparseDiversePoolLogRegModel_object.warm_start_from_beta0_betas_ExpyXB(beta0 = beta0, betas = betas, ExpyXB = ExpyXB)
-    sparse_diverse_set_continuous = sparseDiversePoolLogRegModel_object.get_sparse_diverse_set(gap_tolerance=sparseDiversePool_gap_tolerance, select_top_m=sparseDiversePool_select_top_m, maxAttempts=maxAttempts)
+    sparseDiversePool_beta0, sparseDiversePool_betas = sparseDiversePoolLogRegModel_object.get_sparseDiversePool(gap_tolerance=sparseDiversePool_gap_tolerance, select_top_m=sparseDiversePool_select_top_m, maxAttempts=maxAttempts)
 
-    sparse_diverse_set_continuous_last_5_solutions = sparse_diverse_set_continuous[:, -5:]
+    sparseDiversePool_beta0_last_5 = sparseDiversePool_beta0[-5:]
+    sparseDiversePool_betas_last_5 = sparseDiversePool_betas[-5:]
 
-
-    # for j in range(5):
-    #     nonzero_indices = np.where(np.abs(sparse_diverse_set_continuous_last_5_solutions[:, j]) > 1e-8)[0]
-    #     print(nonzero_indices)
-        
-    #     sparse_coefficients = sparse_diverse_set_continuous_last_5_solutions[nonzero_indices, j]
-
-    #     print(sparse_coefficients)
-    
     expected_last_5_solutions = get_expected_last_5_solutions()
 
-    assert isEqual_upTo_8decimal(expected_last_5_solutions, sparse_diverse_set_continuous_last_5_solutions), "the last 5 solutions given by sparse diverse pool algorithm is not correct!"
+    expected_last_5_beta0 = expected_last_5_solutions[:, 0]
+    assert isEqual_upTo_8decimal(expected_last_5_beta0, sparseDiversePool_beta0_last_5), "the intercept of the last 5 solutions given by sparse diverse pool algorithm is not correct!"
+
+    expected_last_5_betas = expected_last_5_solutions[:, 1:]
+    assert isEqual_upTo_8decimal(expected_last_5_betas, sparseDiversePool_betas_last_5), "the coefficients of the last 5 solutions given by sparse diverse pool algorithm is not correct!"
 
 if __name__ == '__main__':
     test_sparseDiversePool()
