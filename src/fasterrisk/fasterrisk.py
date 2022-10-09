@@ -5,7 +5,7 @@ from fasterrisk.sparseBeamSearch import sparseLogRegModel
 from fasterrisk.sparseDiversePool import sparseDiversePoolLogRegModel
 from fasterrisk.rounding import starRaySearchModel
 
-from fasterrisk.utils import compute_logisticLoss_from_X_y_beta0_betas, isEqual_upTo_8decimal, isEqual_upTo_16decimal
+from fasterrisk.utils import compute_logisticLoss_from_X_y_beta0_betas, get_all_product_booleans, get_support_indices, isEqual_upTo_8decimal, isEqual_upTo_16decimal, get_all_product_booleans
 
 class RiskScoreOptimizer:
     def __init__(self, X, y, k, select_top_m=50, lb=-5, ub=5, \
@@ -95,12 +95,10 @@ class RiskScoreOptimizer:
             return self.multipliers[model_index], self.sparse_diverse_set_integer[:, model_index]
         return self.multipliers, self.sparse_diverse_set_integer
 
-    def print_model_card(self, model_index=None):
-        pass
 
 
 class RiskScoreClassifier:
-    def __init__(self, multiplier, intercept, coefficients):
+    def __init__(self, multiplier, intercept, coefficients, featureNames = None):
         """Initialize a risk score classifier. Then we can use this classifier to predict labels, predict probabilites, and calculate total logistic loss
 
         Parameters
@@ -118,6 +116,8 @@ class RiskScoreClassifier:
 
         self.scaled_intercept = self.intercept / self.multiplier
         self.scaled_coefficients = self.coefficients / self.multiplier
+
+        self.reset_featureNames(featureNames)
 
     def predict(self, X):
         """Predict labels
@@ -172,6 +172,22 @@ class RiskScoreClassifier:
         return compute_logisticLoss_from_X_y_beta0_betas(X, y, self.scaled_intercept, self.scaled_coefficients)
 
     def get_acc_and_auc(self, X, y):
+        """Calculate ACC and AUC of a certain dataset with features X and label y
+
+        Parameters
+        ----------
+        X : float[:, :]
+            2D array storing the features
+        y : float[:]
+            1D array storing the labels (+1/-1) 
+
+        Returns
+        -------
+        acc: float
+            accuracy
+        auc: float
+            area under the ROC curve
+        """
         y_pred = self.predict(X)
         # print(y_pred.shape, y.shape)
         acc = np.sum(y_pred == y) / len(y)
@@ -180,3 +196,63 @@ class RiskScoreClassifier:
         fpr, tpr, thresholds = sklearn.metrics.roc_curve(y_true=y, y_score=y_pred_prob, drop_intermediate=False)
         auc = sklearn.metrics.auc(fpr, tpr)
         return acc, auc
+
+    def reset_featureNames(self, featureNames):
+        """Reset the feature names in the class in order to print out the model card for the user
+
+        Parameters
+        ----------
+        featureNames : str[:]
+            a list of strings which are the feature names for columns of X
+        """
+        self.featureNames = featureNames
+
+    def _print_score_calculation_table(self):
+        assert self.featureNames is not None, "please pass the featureNames to the model by using the function .reset_featureNames(featureNames)"
+
+        nonzero_indices = get_support_indices(self.coefficients)
+
+        max_feature_length = max([len(featureName) for featureName in self.featureNames])
+        row_score_template = '{0}. {1:>%d}     {2:>2} point(s) | + ...' % (max_feature_length)
+
+        print("The Risk Score is:")
+        for count, feature_i in enumerate(nonzero_indices):
+            row_score_str = row_score_template.format(count+1, self.featureNames[feature_i], int(self.coefficients[feature_i]))
+            if count == 0:
+                row_score_str = row_score_str.replace("+", " ")
+            
+            print(row_score_str)
+
+        final_score_str = ' ' * (14+max_feature_length) + 'SCORE | =    '
+        print(final_score_str)
+
+    def _print_score_risk_row(self, scores, risks):
+        score_row = "SCORE |"
+        risk_row = "RISK  |"
+        score_entry_template = '  {0:>4}  |'
+        risk_entry_template = ' {0:>5}% |'
+        for (score, risk) in zip(scores, risks):
+            score_row += score_entry_template.format(score)
+            risk_row += risk_entry_template.format(round(100*risk, 1))
+        print(score_row)
+        print(risk_row)
+
+    def _print_score_risk_table(self):
+        nonzero_indices = get_support_indices(self.coefficients)
+        all_product_booleans = get_all_product_booleans(len(nonzero_indices))
+        all_scores = all_product_booleans.dot(self.coefficients[nonzero_indices])
+        all_scores = np.unique(all_scores)
+        all_scaled_scores = (self.intercept + all_scores) / self.multiplier
+        all_risks = 1 / (1 + np.exp(-all_scaled_scores))
+
+        num_scores_div_2 = (len(all_scores) + 1) // 2
+        self._print_score_risk_row(all_scores[:num_scores_div_2], all_risks[:num_scores_div_2])
+        self._print_score_risk_row(all_scores[num_scores_div_2:], all_risks[num_scores_div_2:])
+
+    def print_model_card(self):
+        """Print the score evaluation table and score risk table onto terminal
+        """
+        self._print_score_calculation_table()
+        self._print_score_risk_table()
+        
+

@@ -1,4 +1,6 @@
 import numpy as np
+from itertools import product
+import requests
 
 def get_support_indices(betas):
     return np.where(np.abs(betas) > 1e-9)[0]
@@ -38,23 +40,6 @@ def convert_y_to_neg_and_pos_1(y):
     y_transformed = -1 + 2 * (y-y_min)/(y_max-y_min) # convert y to -1 and 1
     return y_transformed
 
-# def get_acc_and_auc(betas, X, y):
-#     accuracy = compute_accuracy(betas, X, y)
-#     auc = compute_auc(betas, X, y)
-#     return accuracy, auc
-
-# def compute_accuracy(betas, X, y):
-#     y_pred = X.dot(betas)
-#     y_pred = 2 * (y_pred > 0) - 1
-#     return np.sum(y_pred == y) / y.shape[0]
-
-# def compute_auc(betas, X, y):
-#     y_pred = X.dot(betas)
-#     y_pred = 1/(1+np.exp(-y_pred))
-#     fpr, tpr, thresholds = sklearn.metrics.roc_curve(y, y_pred)
-#     auc = sklearn.metrics.auc(fpr, tpr)
-#     return auc
-
 def isEqual_upTo_8decimal(a, b):
     if np.isscalar(a):
         return abs(a - b) < 1e-8
@@ -70,3 +55,44 @@ def insertIntercept_asFirstColOf_X(X):
     intercept = np.ones((n, 1))
     X_with_intercept = np.hstack((intercept, X))
     return X_with_intercept
+
+def get_all_product_booleans(sparsity=5):
+    # build list of lists:
+    all_lists = []
+    for i in range(sparsity):
+        all_lists.append([0, 1])
+    all_products = list(product(*all_lists))
+    all_products = [list(elem) for elem in all_products]
+    return np.array(all_products)
+
+def download_file_from_google_drive(id, destination):
+    # link: https://stackoverflow.com/a/39225272/5040208
+    URL = "https://docs.google.com/uc?export=download"
+
+    session = requests.Session()
+
+    response = session.get(URL, params = { 'id' : id , 'confirm': 1 }, stream = True)
+    token = get_confirm_token(response)
+
+    if token:
+        params = { 'id' : id, 'confirm' : token }
+        response = session.get(URL, params = params, stream = True)
+
+    save_response_content(response, destination)
+
+def get_confirm_token(response):
+    # link: https://stackoverflow.com/a/39225272/5040208
+    for key, value in response.cookies.items():
+        if key.startswith('download_warning'):
+            return value
+
+    return None
+
+def save_response_content(response, destination):
+    # link: https://stackoverflow.com/a/39225272/5040208
+    CHUNK_SIZE = 32768
+
+    with open(destination, "wb") as f:
+        for chunk in response.iter_content(CHUNK_SIZE):
+            if chunk: # filter out keep-alive new chunks
+                f.write(chunk)
