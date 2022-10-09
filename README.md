@@ -14,7 +14,7 @@ $ pip install fasterrisk
 - [x] Implement print_model_card() function in the fasterrisk module.
 - [x] Add the usage of print_model_card() in example jupyter notebook.
 - [x] Fix un-transpose the solutions returned by sparseDiversePool 
-- [ ] Revise Usage section writeup in the README
+- [x] Revise Usage section writeup in the README
 - [ ] Upload to TestPyPI to test the package
 - [ ] Add citation bib file at the bottom once the article is available on Google Scholar
 - [ ] Add underscore in front of internal functions in the modules?
