@@ -53,23 +53,23 @@ class sparseDiversePoolLogRegModel(logRegModel):
         betas_squareSum = self.betas[nonzero_indices].dot(self.betas[nonzero_indices])
         for num_old_j, old_j in enumerate(nonzero_indices):
             # pick $maxAttempt$ number of features that can replace old_j
-            sparse_level_start = num_old_j * maxAttempts
-            sparse_level_end = (1 + num_old_j) * maxAttempts
+            sparseDiversePool_start = num_old_j * maxAttempts
+            sparseDiversePool_end = (1 + num_old_j) * maxAttempts
 
-            sparseDiversePool_ExpyXB[sparse_level_start:sparse_level_end] = self.ExpyXB * np.exp(-self.yXT[old_j] * self.betas[old_j])
+            sparseDiversePool_ExpyXB[sparseDiversePool_start:sparseDiversePool_end] = self.ExpyXB * np.exp(-self.yXT[old_j] * self.betas[old_j])
 
-            sparseDiversePool_betas[sparse_level_start:sparse_level_end, old_j] = 0
+            sparseDiversePool_betas[sparseDiversePool_start:sparseDiversePool_end, old_j] = 0
             
             betas_no_old_j_squareSum = betas_squareSum - self.betas[old_j]**2
 
-            grad_on_nonsupport = -self.yXT[zero_indices].dot(np.reciprocal(1+sparseDiversePool_ExpyXB[sparse_level_start]))
+            grad_on_nonsupport = -self.yXT[zero_indices].dot(np.reciprocal(1+sparseDiversePool_ExpyXB[sparseDiversePool_start]))
             abs_grad_on_nonsupport = np.abs(grad_on_nonsupport)
 
             # new_js = np.argpartition(abs_full_grad, -max_num_new_js)[-max_num_new_js:]
             new_js = zero_indices[np.argsort(-abs_grad_on_nonsupport)[:max_num_new_js]]
 
             for num_new_j, new_j in enumerate(new_js):
-                sparseDiversePool_index = sparse_level_start + num_new_j
+                sparseDiversePool_index = sparseDiversePool_start + num_new_j
                 for _ in range(10):
                     self.optimize_1step_at_coord(sparseDiversePool_ExpyXB[sparseDiversePool_index], sparseDiversePool_betas[sparseDiversePool_index], self.yXT[new_j, :], new_j)
                 
@@ -93,4 +93,4 @@ class sparseDiversePoolLogRegModel(logRegModel):
         original_sparseDiversePool_solution[0] = sparseDiversePool_beta0[selected_sparseDiversePool_indices]
         original_sparseDiversePool_solution[0] -= self.X_mean.T @ original_sparseDiversePool_solution[1:]
         
-        return original_sparseDiversePool_solution # (1+p, m) m is the number of solutions in the level set
+        return original_sparseDiversePool_solution # (1+p, m) m is the number of solutions in the pool

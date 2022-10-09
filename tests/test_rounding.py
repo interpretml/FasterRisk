@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from fasterrisk.sparseBeamSearch import sparseLogRegModel
 from fasterrisk.sparseDiversePool import sparseDiversePoolLogRegModel
 from fasterrisk.rounding import starRaySearchModel
@@ -31,16 +32,15 @@ def get_expected_last_5_integer_solutions():
 
 def test_rounding():
     # import data
-    train_test_data = np.load("tests/train_test_data.npz", allow_pickle=True)
-    
-    X_train, y_train, X_test, y_test = train_test_data["X_train"], train_test_data["y_train"], train_test_data["X_test"], train_test_data["y_test"] 
-    y_train = y_train
-    y_test = y_test
+    train_data = np.asarray(pd.read_csv("tests/adult_train_data.csv"))
+    X_train, y_train = train_data[:, 1:], train_data[:, 0]
+    test_data = np.asarray(pd.read_csv("tests/adult_test_data.csv"))
+    X_test, y_test = test_data[:, 1:], test_data[:, 0]
     
     lambda2 = 1e-8
     sparsity = 5
-    sparseLevelSet_gap_tolerance = 0.05
-    sparseLevelSet_select_top_m = 50
+    sparseDiversePool_gap_tolerance = 0.05
+    sparseDiversePool_select_top_m = 50
     parent_size = 10
     child_size = 10
     maxAttempts = 50
@@ -59,7 +59,7 @@ def test_rounding():
 
 
     sparseDiversePoolLogRegModel_object.warm_start_from_beta0_betas_ExpyXB(beta0 = beta0, betas = betas, ExpyXB = ExpyXB)
-    sparse_diverse_set_continuous = sparseDiversePoolLogRegModel_object.get_sparse_diverse_set(gap_tolerance=sparseLevelSet_gap_tolerance, select_top_m=sparseLevelSet_select_top_m, maxAttempts=maxAttempts)
+    sparse_diverse_set_continuous = sparseDiversePoolLogRegModel_object.get_sparse_diverse_set(gap_tolerance=sparseDiversePool_gap_tolerance, select_top_m=sparseDiversePool_select_top_m, maxAttempts=maxAttempts)
 
 
     starRaySearchModel_object = starRaySearchModel(X = X_train, y = y_train, num_ray_search=num_ray_search, early_stop_tolerance=lineSearch_early_stop_tolerance)
