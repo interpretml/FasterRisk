@@ -27,8 +27,8 @@ python -m pip install fasterrisk # pip install the fasterrisk package
 ## Usage
 Please see the [example.ipynb](./docs/example.ipynb) jupyter notebook for a detailed tutorial on how to use FasterRisk in a python environment.
 
-Two classes:
-- RiskScoreOptimizer
+There are two major two classes to users to interact with:
+- **RiskScoreOptimizer**
 ```python
 sparsity = 5 # produce a risk score model with 5 nonzero coefficients 
 
@@ -45,11 +45,11 @@ m.optimize()
 arr_multiplier, arr_intercept, arr_coefficients = m.get_models() # get m solutions from the diverse pool; Specifically, arr_multiplier.shape=(m, ), arr_intercept.shape=(m, ), arr_coefficients.shape=(m, p)
 
 # get the first solution from the final diverse pool by passing an optional model_index; models are ranked in order of increasing logistic loss
-multiplier, intercept, coefficients = m.get_models(model_index = 0) # get the first solutions from the diverse pool; Specifically, multiplier.shape=(1, ), intercept.shape=(1, ), coefficients.shape=(p, )
+multiplier, intercept, coefficients = m.get_models(model_index = 0) # get the first solution (smallest logistic loss; solutions are ordered in the ascending order of logistic loss) from the diverse pool; Specifically, multiplier.shape=(1, ), intercept.shape=(1, ), coefficients.shape=(p, )
 
 ```
 
-- RiskScoreClassifier
+- **RiskScoreClassifier**
 ```python
 # import data
 X_test, y_test, X_featureNames = ... # X_featureNames is a list of strings, each of which is the feature name
