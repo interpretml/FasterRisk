@@ -18,14 +18,14 @@ python -m pip install fasterrisk # pip install the fasterrisk package
 - [x] Fix un-transpose the solutions returned by sparseDiversePool 
 - [x] Revise Usage section writeup in the README
 - [x] Add conda environment creation terminal command 
-- [ ] To get models, implement sorting according to logistic loss. Has an internal flag to avoid sorting every time when calling this function
+- [x] To get models, implement sorting according to logistic loss. Has an internal flag to avoid sorting every time when calling this function
 - [ ] Upload to TestPyPI to test the package
 - [ ] Add citation bib file at the bottom once the article is available on Google Scholar
-- [ ] Add underscore in front of internal functions in the modules?
 - [ ] Host documentation online with Read the Docs
 - [ ] Add Read the Docs link to GitHub repo README once it is available.
 
 ## Usage
+Please see the [example.ipynb](./docs/example.ipynb) jupyter notebook for a detailed tutorial on how to use FasterRisk in a python environment.
 
 Two classes:
 - RiskScoreOptimizer
