@@ -50,6 +50,8 @@ class RiskScoreOptimizer:
         assert max(np.abs(y_unique - y_unique_expected)) < 1e-8, "input y must be equal to only +1 or -1"
         assert len(X_shape) == 2, "input X must have 2-D shape!"
         assert X_shape[0] == y_shape[0], "number of rows from input X must be equal to the number of elements from input y!"
+        self.y = y
+        self.X = X
 
         self.k = k
         self.parent_size = parent_size
@@ -65,6 +67,8 @@ class RiskScoreOptimizer:
         self.sparseDiversePoolLogRegModel_object = sparseDiversePoolLogRegModel(X, y, intercept=True)
         self.starRaySearchModel_object = starRaySearchModel(X = X, y = y, num_ray_search=num_ray_search, early_stop_tolerance=lineSearch_early_stop_tolerance)
 
+        self.IntegerPoolIsSorted = False
+
     def optimize(self):
         """performs sparseBeamSearch, generates integer sparseDiverseSet, and perform star ray search
         """
@@ -75,6 +79,22 @@ class RiskScoreOptimizer:
         sparseDiversePool_beta0, sparseDiversePool_betas = self.sparseDiversePoolLogRegModel_object.get_sparseDiversePool(gap_tolerance=self.sparseDiverseSet_gap_tolerance, select_top_m=self.sparseDiverseSet_select_top_m, maxAttempts=self.sparseDiverseSet_maxAttempts)
 
         self.multipliers, self.sparseDiversePool_beta0_integer, self.sparseDiversePool_betas_integer = self.starRaySearchModel_object.star_ray_search_scale_and_round(sparseDiversePool_beta0, sparseDiversePool_betas)
+
+    def _sort_IntegerPool_on_logisticLoss(self):
+        """sort the integer solutions in the pool by ascending order of logistic loss
+        """
+        sparseDiversePool_XB = (self.sparseDiversePool_beta0_integer.reshape(1, -1) + self.X @ self.sparseDiversePool_betas_integer.transpose()) / (self.multipliers.reshape(1, -1))
+        sparseDiversePool_yXB = self.y.reshape(-1, 1) * sparseDiversePool_XB
+        sparseDiversePool_ExpyXB = np.exp(sparseDiversePool_yXB)
+        print(sparseDiversePool_ExpyXB.shape)
+        sparseDiversePool_logisticLoss = np.sum(np.log(1.+np.reciprocal(sparseDiversePool_ExpyXB)), axis=0)
+        orderedIndices = np.argsort(sparseDiversePool_logisticLoss)
+
+        self.multipliers = self.multipliers[orderedIndices]
+        self.sparseDiversePool_beta0_integer = self.sparseDiversePool_beta0_integer[orderedIndices]
+        self.sparseDiversePool_betas_integer = self.sparseDiversePool_betas_integer[orderedIndices]
+
+        self.IntegerPoolIsSorted = True
 
     def get_models(self, model_index=None):
         """get risk score models
@@ -91,6 +111,8 @@ class RiskScoreOptimizer:
         sparseDiversePool_integer : float[:, :]
             integer coefficients (intercept included) with each row as an integer solution sparseDiversePool_integer[i]
         """
+        if self.IntegerPoolIsSorted is False:
+            self._sort_IntegerPool_on_logisticLoss()
         if model_index is not None:
             return self.multipliers[model_index], self.sparseDiversePool_beta0_integer[model_index], self.sparseDiversePool_betas_integer[model_index]
         return self.multipliers, self.sparseDiversePool_beta0_integer, self.sparseDiversePool_betas_integer
