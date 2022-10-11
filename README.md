@@ -5,7 +5,9 @@ Create sparse and accurate risk scoring systems!
 ## Installation
 
 ```bash
-$ pip install fasterrisk
+conda create -n FasterRisk python=3.9 # create a virtual environment
+conda activate FasterRisk # activate the virtual environment
+python -m pip install fasterrisk # pip install the fasterrisk package
 ```
 
 ## Package Development ToDo List (ongoing)
@@ -15,6 +17,8 @@ $ pip install fasterrisk
 - [x] Add the usage of print_model_card() in example jupyter notebook.
 - [x] Fix un-transpose the solutions returned by sparseDiversePool 
 - [x] Revise Usage section writeup in the README
+- [x] Add conda environment creation terminal command 
+- [ ] To get models, implement sorting according to logistic loss. Has an internal flag to avoid sorting every time when calling this function
 - [ ] Upload to TestPyPI to test the package
 - [ ] Add citation bib file at the bottom once the article is available on Google Scholar
 - [ ] Add underscore in front of internal functions in the modules?
@@ -28,7 +32,7 @@ Two classes:
 ```python
 sparsity = 5 # produce a risk score model with 5 nonzero coefficients 
 
-# read in data
+# import data
 X_train, y_train = ...
 
 # initialize a risk score optimizer
@@ -38,7 +42,7 @@ m = RiskScoreOptimizer(X = X_train, y = y_train, k = sparsity)
 m.optimize()
 
 # get all top m solutions from the final diverse pool
-arr_multipliers, arr_intercepts, arr_coefficients = m.get_models() # get m solutions from the diverse pool; Specifically, multipliers.shape=(m, ), intercepts.shape=(m, ), coefficients.shape=(m, p)
+arr_multiplier, arr_intercept, arr_coefficients = m.get_models() # get m solutions from the diverse pool; Specifically, arr_multiplier.shape=(m, ), arr_intercept.shape=(m, ), arr_coefficients.shape=(m, p)
 
 # get the first solution from the final diverse pool by passing an optional model_index; models are ranked in order of increasing logistic loss
 multiplier, intercept, coefficients = m.get_models(model_index = 0) # get the first solutions from the diverse pool; Specifically, multiplier.shape=(1, ), intercept.shape=(1, ), coefficients.shape=(p, )
@@ -47,7 +51,7 @@ multiplier, intercept, coefficients = m.get_models(model_index = 0) # get the fi
 
 - RiskScoreClassifier
 ```python
-# Read in data
+# import data
 X_test, y_test, X_featureNames = ... # X_featureNames is a list of strings, each of which is the feature name
 
 # create a classifier
