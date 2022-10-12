@@ -17,9 +17,9 @@ Over the last century, risk scores have been the most popular form of predictive
 
 |                            |             |       |
 | :---                       |    ---:     |  :--- |
-|1.  No High School Diploma  |   -4 points | + ... |
+|1.  No High School Diploma  |   -4 points |   ... |
 |2.     High School Diploma  |   -2 points | + ... |
-|3.            Age 22 to 29  |   -2 points |   ... |
+|3.            Age 22 to 29  |   -2 points | + ... |
 |4.       Any Capital Gains  |    3 points | + ... |
 |5.                 Married  |    4 points | + ... |
 |                            |       SCORE | =     |
