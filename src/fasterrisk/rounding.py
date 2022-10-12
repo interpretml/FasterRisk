@@ -6,8 +6,7 @@ import sys
 from fasterrisk.utils import get_support_indices, compute_logisticLoss_from_betas_and_yX, insertIntercept_asFirstColOf_X
 
 class starRaySearchModel:
-    def __init__(self, X, y, num_ray_search=20, early_stop_tolerance=0.001):
-        # self.X = X
+    def __init__(self, X, y, lb=-5, ub=5, num_ray_search=20, early_stop_tolerance=0.001):
         self.X = insertIntercept_asFirstColOf_X(X)
         self.y = y.reshape(-1)
         self.yX = self.y.reshape(-1, 1) * self.X
@@ -15,8 +14,10 @@ class starRaySearchModel:
         self.n = self.X.shape[0]
         self.p = self.X.shape[1]
 
-        self.abs_coef_ub = 5.0
-        self.abs_intercept_ub = 100.0
+        self.ub_arr = ub * np.ones((self.p, ))
+        self.ub_arr[0] = 100.0 # intercept upper bound
+        self.lb_arr = lb * np.ones((self.p, ))
+        self.lb_arr[0] = -100.0 # intercept lower bound
 
         self.num_ray_search = num_ray_search
         self.early_stop_tolerance = early_stop_tolerance
@@ -34,7 +35,19 @@ class starRaySearchModel:
         multipliers : float[:]
             an array of candidate multipliers with shape = (num_ray_search, )
         """
-        largest_multiplier = min(self.abs_coef_ub/np.max(np.abs(betas[1:])), self.abs_intercept_ub/abs(betas[0]))
+        # largest_multiplier = min(self.abs_coef_ub/np.max(np.abs(betas[1:])), self.abs_intercept_ub/abs(betas[0]))
+        pos_nonzeroIndices = np.where(betas > 1e-8)[0]
+        neg_nonzeroIndices = np.where(betas < -1e-8)[0]
+        len_pos_nonzeroIndices = len(pos_nonzeroIndices)
+        len_neg_nonzeroIndices = len(neg_nonzeroIndices)
+
+        assert len_pos_nonzeroIndices + len_neg_nonzeroIndices > 0, "betas needs to have at least one nonzero entries!"
+        largest_multiplier = 1e8
+        if len_pos_nonzeroIndices > 0:
+            largest_multiplier = min(largest_multiplier, min(self.ub_arr[pos_nonzeroIndices] / betas[pos_nonzeroIndices]))
+        if len_neg_nonzeroIndices > 0:
+            largest_multiplier = min(largest_multiplier, min(self.lb_arr[neg_nonzeroIndices] / betas[neg_nonzeroIndices]))
+        
         if largest_multiplier > 1:
             multipliers = np.linspace(1, largest_multiplier, self.num_ray_search)
         else:

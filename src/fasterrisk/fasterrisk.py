@@ -63,9 +63,12 @@ class RiskScoreOptimizer:
         self.sparseDiverseSet_select_top_m = select_top_m
         self.sparseDiverseSet_maxAttempts = maxAttempts
 
-        self.sparseLogRegModel_object = sparseLogRegModel(X, y, intercept=True)
-        self.sparseDiversePoolLogRegModel_object = sparseDiversePoolLogRegModel(X, y, intercept=True)
-        self.starRaySearchModel_object = starRaySearchModel(X = X, y = y, num_ray_search=num_ray_search, early_stop_tolerance=lineSearch_early_stop_tolerance)
+        assert ub >= 0, "ub needs to be >= 0"
+        assert lb <= 0, "lb needs to be <= 0"
+
+        self.sparseLogRegModel_object = sparseLogRegModel(X, y, intercept=True, original_lb=lb, original_ub=ub)
+        self.sparseDiversePoolLogRegModel_object = sparseDiversePoolLogRegModel(X, y, intercept=True, original_lb=lb, original_ub=ub)
+        self.starRaySearchModel_object = starRaySearchModel(X = X, y = y, lb=lb, ub=ub, num_ray_search=num_ray_search, early_stop_tolerance=lineSearch_early_stop_tolerance)
 
         self.IntegerPoolIsSorted = False
 
