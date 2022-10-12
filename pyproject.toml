@@ -11,9 +11,9 @@ authors = ["Jiachang Liu <jiachang.liu@duke.edu>",
 maintainers = ["Jiachang Liu <jiachang.liu@duke.edu>"]
 license = "BSD 3-Clause"
 readme = "README.md"
-homepage = "https://python-poetry.org/"
+homepage = "https://pypi.org/project/fasterrisk/"
 repository = "https://github.com/jiachangliu/FasterRisk"
-documentation = "https://python-poetry.org/docs/" 
+documentation = "https://fasterrisk.readthedocs.io/en/latest/" 
 
 [tool.poetry.dependencies]
 python = "^3.8"
