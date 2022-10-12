@@ -23,7 +23,6 @@ Over the last century, risk scores have been the most popular form of predictive
 |4.       Any Capital Gains  |    3 points | + ... |
 |5.                 Married  |    4 points | + ... |
 |                            |       SCORE | =     |
-|                            |             |       |
 
 |      |        |        |        |        |        |        |        |
 |:---  | :----: | :----: | :----: | :----: | :----: | :----: | :----: | 
@@ -31,7 +30,6 @@ Over the last century, risk scores have been the most popular form of predictive
 |RISK  |   0.1% |   0.4% |   0.7% |   1.2% |   2.3% |   4.2% |   7.6% |
 |SCORE |   0.0  |   1.0  |   2.0  |   3.0  |   4.0  |   5.0  |   7.0  |        
 |RISK  |  13.3% |  22.3% |  34.9% |  50.0% |  65.1% |  77.7% |  92.4% |
-|      |        |        |        |        |        |        |        |
 
 Typically, risk scores have been created either without data or by rounding logistic regression coefficients, but these methods do not reliably produce high-quality risk scores. Recent work used mathematical programming, which is computationally slow.
 
