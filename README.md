@@ -117,7 +117,7 @@ Interested in contributing? Check out the contributing guidelines. Please note t
 
 If you find our work useful in your research, please consider citing the following paper:
 
-```
+```BibTeX
 @article{liu2022fasterrisk,
   title={FasterRisk: Fast and Accurate Interpretable Risk Scores},
   author={Liu, Jiachang and Zhong, Chudi and Li, Boxuan and Seltzer, Margo and Rudin, Cynthia},
