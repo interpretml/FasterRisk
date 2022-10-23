@@ -16,10 +16,10 @@ class RiskScoreOptimizer:
 
         Parameters
         ----------
-        X : float[:, :]
-            feature matrix, each row[i, :] corresponds to the features of sample i
-        y : float[:]
-            labels (+1 or -1) of each sample
+        X : ndarray
+            (2D array with `float` type) feature matrix, each row[i, :] corresponds to the features of sample i
+        y : ndarray
+            (1D array with `float` type) labels (+1 or -1) of each sample
         k : int
             number of selected features in the final sparse model
         select_top_m : int, optional
@@ -30,7 +30,7 @@ class RiskScoreOptimizer:
             upper bound of the coefficients, by default 5
         parent_size : int, optional
             how many solutions to retain after beam search, by default 10
-        child_size : _type_, optional
+        child_size : int, optional
             how many new solutions to expand for each existing solution, by default None
         maxAttempts : int, optional
             how many alternative features to try in order to replace the old feature during the diverse set pool generation, by default None
@@ -109,10 +109,10 @@ class RiskScoreOptimizer:
 
         Returns
         -------
-        multipliers : float[:] 
-            multipliers with each entry as multipliers[i] 
-        sparseDiversePool_integer : float[:, :]
-            integer coefficients (intercept included) with each row as an integer solution sparseDiversePool_integer[i]
+        multipliers : ndarray 
+            (1D array with `float` type) multipliers with each entry as multipliers[i] 
+        sparseDiversePool_integer : ndarray
+            (2D array with `float` type) integer coefficients (intercept included) with each row as an integer solution sparseDiversePool_integer[i]
         """
         if self.IntegerPoolIsSorted is False:
             self._sort_IntegerPool_on_logisticLoss()
@@ -132,8 +132,8 @@ class RiskScoreClassifier:
             multiplier of the risk score model
         intercept : float
             intercept of the risk score model
-        coefficients : float[:]
-            coefficients of the risk score model
+        coefficients : ndarray
+            (1D array with `float` type) coefficients of the risk score model
         """
         self.multiplier = multiplier
         self.intercept = intercept
@@ -149,13 +149,13 @@ class RiskScoreClassifier:
 
         Parameters
         ----------
-        X : float[:, :]
-            feature matrix with shape (n, p)
+        X : ndarray
+            (2D array with `float` type) feature matrix with shape (n, p)
 
         Returns
         -------
-        y_pred : float[:]
-            predicted labels (+1.0 or -1.0) with shape (n, )
+        y_pred : ndarray
+            (1D array with `float` type) predicted labels (+1.0 or -1.0) with shape (n, ) 
         """
         y_score = (self.intercept + X.dot(self.coefficients)) / self.multiplier # numpy dot.() has some floating point error issues, so we avoid using self.scaled_intercept and self.scaled_coefficients directly
         y_pred = 2 * (y_score > 0) - 1
@@ -166,13 +166,13 @@ class RiskScoreClassifier:
 
         Parameters
         ----------
-        X : float[:, :]
-            feature matrix with shape (n, p)
+        X : ndarray
+            (2D array with `float` type) feature matrix with shape (n, p)
 
         Returns
         -------
-        y_pred_prob : float[:]
-            probabilities of each sample y_i to be +1 with shape (n, )
+        y_pred_prob : ndarray
+            (1D array with `float` type) probabilities of each sample y_i to be +1 with shape (n, )
         """
         y_score = (self.intercept + X.dot(self.coefficients)) / self.multiplier # numpy dot.() has some floating point error issues, so we avoid using self.scaled_intercept and self.scaled_coefficients directly
         y_pred_prob = 1/(1+np.exp(-y_score))
@@ -184,10 +184,10 @@ class RiskScoreClassifier:
 
         Parameters
         ----------
-        X : float[:, :]
-            feature matrix with shape (n, p)
-        y : float[:]
-            sample labels (+1 or -1) with shape (n)
+        X : ndarray
+            (2D array with `float` type) feature matrix with shape (n, p)
+        y : ndarray
+            (1D array with `float` type) sample labels (+1 or -1) with shape (n)
 
         Returns
         -------
@@ -201,10 +201,10 @@ class RiskScoreClassifier:
 
         Parameters
         ----------
-        X : float[:, :]
-            2D array storing the features
-        y : float[:]
-            1D array storing the labels (+1/-1) 
+        X : ndarray
+            (2D array with `float` type) 2D array storing the features
+        y : ndarray
+            (1D array with `float` type) storing the labels (+1/-1) 
 
         Returns
         -------

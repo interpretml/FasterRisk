@@ -23,10 +23,10 @@ class sparseDiversePoolLogRegModel(logRegModel):
 
         Returns
         -------
-        intercept_array : float[:]
-            Return the intercept array with shape = (select_top_m, )
-        coefficients_array : float[:, :]
-            Return the coefficients array with shape = (select_top_m, p)
+        intercept_array : ndarray
+            (1D array with `float` type) Return the intercept array with shape = (select_top_m, )
+        coefficients_array : ndarray
+            (2D array with `float` type) Return the coefficients array with shape = (select_top_m, p)
         """
         # select top m solutions with the lowest logistic losses
         # Note Bene: loss comparison here does not include logistic loss

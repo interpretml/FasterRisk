@@ -27,13 +27,13 @@ class starRaySearchModel:
 
         Parameters
         ----------
-        betas : float[:]
-            a given solution with shape = (1+p, ) assuming the first entry is the intercept
+        betas : ndarray
+            (1D array with `float` type) a given solution with shape = (1+p, ) assuming the first entry is the intercept
 
         Returns
         -------
-        multipliers : float[:]
-            an array of candidate multipliers with shape = (num_ray_search, )
+        multipliers : ndarray
+            (1D array with `float` type) an array of candidate multipliers with shape = (num_ray_search, )
         """
         # largest_multiplier = min(self.abs_coef_ub/np.max(np.abs(betas[1:])), self.abs_intercept_ub/abs(betas[0]))
         pos_nonzeroIndices = np.where(betas > 1e-8)[0]
@@ -59,19 +59,19 @@ class starRaySearchModel:
 
         Parameters
         ----------
-        sparseDiversePool_beta_continuous : float[:]
-            an array of continuous intercept with shape = (m, )
-        sparseDiversePool_betas_continuous : float[:, :]
-            an array of continuous coefficients with shape = (m, p) 
+        sparseDiversePool_beta_continuous : ndarray
+            (1D array with `float` type) an array of continuous intercept with shape = (m, )
+        sparseDiversePool_betas_continuous : ndarray
+            (2D array with `float` type) an array of continuous coefficients with shape = (m, p) 
 
         Returns
         -------
-        multipliers : float[:]
-            best multiplier for each continuous solution with shape = (m, )
-        best_beta0 : float[:]
-            best integer intercept for each continuous solution with shape = (m, )
-        best_betas : float[:, :]
-            best integer coefficient for each continuous solution with shape = (m, p)
+        multipliers : ndarray
+            (1D array with `float` type) best multiplier for each continuous solution with shape = (m, )
+        best_beta0 : ndarray
+            (1D array with `float` type) best integer intercept for each continuous solution with shape = (m, )
+        best_betas : ndarray
+            (2D array with `float` type) best integer coefficient for each continuous solution with shape = (m, p)
         """
         sparseDiversePool_continuous = np.hstack((sparseDiversePool_beta0_continuous.reshape(-1, 1), sparseDiversePool_betas_continuous))
         
@@ -88,15 +88,15 @@ class starRaySearchModel:
 
         Parameters
         ----------
-        betas : float[:]
-            a given solution with shape = (1+p, ) assuming the first entry is the intercept
+        betas : ndarray
+            (1D array with `float` type) a given solution with shape = (1+p, ) assuming the first entry is the intercept
 
         Returns
         -------
         best_multiplier : float
             best multiplier among all pairs of (multiplier, integer_solution)
-        best_betas : float[:]
-            best integer solution among all pairs of (multiplier, integer_solution)
+        best_betas : ndarray
+            (1D array with `float` type) best integer solution among all pairs of (multiplier, integer_solution)
         """
         nonzero_indices = get_support_indices(betas)
         num_nonzero = len(nonzero_indices)
@@ -139,19 +139,19 @@ class starRaySearchModel:
 
         Parameters
         ----------
-        betas : float[:]
-            current continuous (real-valued) solution
+        betas : ndarray
+            (1D array with `float` type) current continuous (real-valued) solution
 
         Returns
         -------
-        betas_floor : float[:]
-            rounded-down coefficients
-        dist_from_start_to_floor: float[:]
-            distance from the real coefficient to the rounded-down integer
-        betas_ceil : float[:] 
-            rounded-up coefficients
-        dist_from_start_to_ceil: float[:] 
-            distance from the real coefficient to the rounded-up integer
+        betas_floor : ndarray
+            (1D array with `float` type) rounded-down coefficients
+        dist_from_start_to_floor: ndarray
+            (1D array with `float` type) distance from the real coefficient to the rounded-down integer
+        betas_ceil : ndarray 
+            (1D array with `float` type) rounded-up coefficients
+        dist_from_start_to_ceil: ndarray 
+            (1D array with `float` type) distance from the real coefficient to the rounded-up integer
         dimensions_to_round: int[:]
             array of indices where the coefficients are not integers to begin with and upon which we should do rounding
         """
@@ -172,15 +172,15 @@ class starRaySearchModel:
 
         Parameters
         ----------
-        betas : float[:]
-            current continuous (real-valued) solution
-        yX : float[:, :]
-            yX[i, j] = y[i] * X[i, j]
+        betas : ndarray
+            (1D array with `float` type) current continuous (real-valued) solution
+        yX : ndarray
+            (2D array with `float` type) yX[i, j] = y[i] * X[i, j]
 
         Returns
         -------
-        integer_beta : float[:]
-            rounded integer solution
+        integer_beta : ndarray
+            (1D array with `float` type) rounded integer solution
         """
         n_local, p_local = yX.shape[0], yX.shape[1]
 
