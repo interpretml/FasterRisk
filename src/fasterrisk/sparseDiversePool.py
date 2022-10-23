@@ -82,7 +82,8 @@ class sparseDiversePoolLogRegModel(logRegModel):
 
         selected_sparseDiversePool_indices = np.argsort(sparseDiversePool_loss)[:select_top_m]
 
-        top_m_original_betas = sparseDiversePool_betas[selected_sparseDiversePool_indices][:, self.scaled_feature_indices] / self.X_norm[self.scaled_feature_indices]
+        top_m_original_betas = np.zeros((len(selected_sparseDiversePool_indices), self.p))
+        top_m_original_betas[:, self.scaled_feature_indices] = sparseDiversePool_betas[selected_sparseDiversePool_indices][:, self.scaled_feature_indices] / self.X_norm[self.scaled_feature_indices]
         top_m_original_beta0 = sparseDiversePool_beta0[selected_sparseDiversePool_indices] - top_m_original_betas.dot(self.X_mean)
 
         return top_m_original_beta0, top_m_original_betas

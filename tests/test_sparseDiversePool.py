@@ -56,5 +56,39 @@ def test_sparseDiversePool():
     expected_last_5_betas = expected_last_5_solutions[:, 1:]
     assert isEqual_upTo_8decimal(expected_last_5_betas, sparseDiversePool_betas_last_5), "the coefficients of the last 5 solutions given by sparse diverse pool algorithm is not correct!"
 
+def test_constantColumn_in_X_train():
+    # import data
+    train_data = np.asarray(pd.read_csv("tests/adult_train_data.csv"))
+    X_train, y_train = train_data[:, 1:], train_data[:, 0]
+    test_data = np.asarray(pd.read_csv("tests/adult_test_data.csv"))
+    X_test, y_test = test_data[:, 1:], test_data[:, 0]
+    
+    lambda2 = 1e-8
+    sparsity = 5
+    sparseDiversePool_gap_tolerance = 0.05
+    sparseDiversePool_select_top_m = 50
+    parent_size = 10
+    child_size = 10
+    maxAttempts = 50
+    num_ray_search = 20
+    lineSearch_early_stop_tolerance = 0.001 
+    
+    X_train[:, 0] = 1.0
+    
+    sparseLogRegModel_object = sparseLogRegModel(X_train, y_train, intercept=True)
+
+    sparseLogRegModel_object.get_sparse_sol_via_OMP(k=sparsity, parent_size=parent_size, child_size=parent_size)
+
+    beta0, betas, ExpyXB = sparseLogRegModel_object.get_beta0_betas_ExpyXB()
+
+
+    sparseDiversePoolLogRegModel_object = sparseDiversePoolLogRegModel(X_train, y_train, intercept=True)
+
+
+    sparseDiversePoolLogRegModel_object.warm_start_from_beta0_betas_ExpyXB(beta0 = beta0, betas = betas, ExpyXB = ExpyXB)
+    sparseDiversePool_beta0, sparseDiversePool_betas = sparseDiversePoolLogRegModel_object.get_sparseDiversePool(gap_tolerance=sparseDiversePool_gap_tolerance, select_top_m=sparseDiversePool_select_top_m, maxAttempts=maxAttempts)
+
+    assert sparseDiversePool_betas.shape[1] == 36, "code cannot handle X_train with feature column all equal to 1!"
+
 if __name__ == '__main__':
     test_sparseDiversePool()
