@@ -1,8 +1,16 @@
 # fasterrisk <!-- omit in toc -->
 
+[![pypi](https://img.shields.io/pypi/v/fasterrisk.svg)](https://pypi.org/project/fasterrisk/)
+[![docs](https://readthedocs.org/projects/fasterrisk/badge/?version=latest)](https://readthedocs.org/projects/fasterrisk/?badge=latest)
+
 This repository contains source code to our NeurIPS 2022 paper:
 
-**FasterRisk: Fast and Accurate Interpretable Risk Scores**
+[**FasterRisk: Fast and Accurate Interpretable Risk Scores**](https://arxiv.org/abs/2210.05846)
+
+- Documentation: [https://fasterrisk.readthedocs.io](https://fasterrisk.readthedocs.io)
+- GitHub: [https://github.com/fasterrisk/fasterrisk](https://github.com/fasterrisk/fasterrisk)
+- PyPI: [https://pypi.org/project/fasterrisk/](https://pypi.org/project/fasterrisk/)
+- Free and open source software: [BSD license](https://github.com/FasterRisk/blob/main/LICENSE)
 
 # Table of Content <!-- omit in toc -->
 - [Introduction](#introduction)
@@ -15,7 +23,7 @@ This repository contains source code to our NeurIPS 2022 paper:
 # Introduction
 Over the last century, risk scores have been the most popular form of predictive model used in healthcare and criminal justice. Risk scores are sparse linear models with integer coefficients; often these models can be memorized or placed on an index card. Below is a risk score example created on the 3rd fold of the [adult dataset](https://github.com/ustunb/risk-slim/tree/master/examples/data) by FasterRisk, predicting salary> 50K.
 
-|                            |             |       |
+| &nbsp;                           |    &nbsp;         |    &nbsp;   |
 | :---                       |    ---:     |  :--- |
 |1.  No High School Diploma  |   -4 points |   ... |
 |2.     High School Diploma  |   -2 points | + ... |
@@ -24,7 +32,7 @@ Over the last century, risk scores have been the most popular form of predictive
 |5.                 Married  |    4 points | + ... |
 |                            |       SCORE | =     |
 
-|      |        |        |        |        |        |        |        |
+|  &nbsp;    |    &nbsp;    |    &nbsp;    |  &nbsp;      |    &nbsp;    |   &nbsp;     |    &nbsp;    |  &nbsp;      |
 |:---  | :----: | :----: | :----: | :----: | :----: | :----: | :----: | 
 |SCORE |  -8.0  |  -6.0  |  -5.0  |  -4.0  |  -3.0  |  -2.0  |  -1.0  |
 |RISK  |   0.1% |   0.4% |   0.7% |   1.2% |   2.3% |   4.2% |   7.6% |
@@ -104,3 +112,15 @@ Interested in contributing? Check out the contributing guidelines. Please note t
 # Credits <!-- omit in toc -->
 
 `fasterrisk` was created with [`cookiecutter`](https://cookiecutter.readthedocs.io/en/latest/) and the `py-pkgs-cookiecutter` [template](https://github.com/py-pkgs/py-pkgs-cookiecutter).
+
+# Citing Our Work <!-- omit in toc -->
+
+If you find our work useful in your research, please consider citing the following paper:
+
+```
+@article{liu2022fasterrisk,
+  title={FasterRisk: Fast and Accurate Interpretable Risk Scores},
+  author={Liu, Jiachang and Zhong, Chudi and Li, Boxuan and Seltzer, Margo and Rudin, Cynthia},
+  booktitle={Proceedings of Neural Information Processing Systems},
+  year={2022}
+}
