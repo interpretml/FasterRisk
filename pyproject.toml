@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fasterrisk"
-version = "0.1.1"
+version = "0.1.2"
 description = "Create sparse and accurate risk scoring systems!"
 authors = ["Jiachang Liu <jiachang.liu@duke.edu>",
            "Chudi Zhong <chudi.zhong@duke.edu>",
