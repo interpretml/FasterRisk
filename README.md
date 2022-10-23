@@ -53,7 +53,7 @@ python -m pip install fasterrisk # pip install the fasterrisk package
 
 
 # Usage
-Please see the [example.ipynb](./docs/example.ipynb) jupyter notebook for a detailed tutorial on how to use FasterRisk in a python environment.
+Please see the [example.ipynb](./docs/example.ipynbhttps://github.com/jiachangliu/FasterRisk/blob/main/docs/example.ipynb) jupyter notebook on GitHub or [Example Usage](https://fasterrisk.readthedocs.io/en/latest/example.html) on Read the Docs for a detailed tutorial on how to use FasterRisk in a python environment. The detailed descriptions of key functions can be found in the [API Reference](https://fasterrisk.readthedocs.io/en/latest/autoapi/index.html) on Read the Docs.
 
 There are two major two classes for the users to interact with:
 - **RiskScoreOptimizer**
