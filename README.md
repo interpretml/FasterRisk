@@ -8,7 +8,7 @@ This repository contains source code to our NeurIPS 2022 paper:
 [**FasterRisk: Fast and Accurate Interpretable Risk Scores**](https://arxiv.org/abs/2210.05846)
 
 - Documentation: [https://fasterrisk.readthedocs.io](https://fasterrisk.readthedocs.io)
-- GitHub: [https://github.com/fasterrisk/fasterrisk](https://github.com/fasterrisk/fasterrisk)
+- GitHub: [https://github.com/jiachangliu/FasterRisk](https://github.com/jiachangliu/FasterRisk)
 - PyPI: [https://pypi.org/project/fasterrisk/](https://pypi.org/project/fasterrisk/)
 - Free and open source software: [BSD license](https://github.com/FasterRisk/blob/main/LICENSE)
 
