@@ -3,8 +3,9 @@
 [![docs](https://readthedocs.org/projects/fasterrisk/badge/?version=latest)](https://readthedocs.org/projects/fasterrisk/?badge=latest)
 [![pypi](https://img.shields.io/pypi/v/fasterrisk?color=blue)](https://pypi.org/project/fasterrisk/)
 [![license](https://img.shields.io/badge/License-BSD-brightgreen)](https://github.com/jiachangliu/FasterRisk/blob/main/LICENSE)
-[![downloads](https://img.shields.io/pypi/dm/fasterrisk)](https://pypistats.org/packages/fasterrisk)
+[![Downloads](https://pepy.tech/badge/fasterrisk)](https://pepy.tech/project/fasterrisk)
 [![arxiv badge](https://img.shields.io/badge/arXiv-2210.05846-red)](https://arxiv.org/abs/2210.05846)
+<!-- [![downloads](https://img.shields.io/pypi/dm/fasterrisk)](https://pypistats.org/packages/fasterrisk) -->
 
 This repository contains source code to our NeurIPS 2022 paper:
 
