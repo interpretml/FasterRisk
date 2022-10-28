@@ -4,8 +4,8 @@
 [![pypi](https://img.shields.io/pypi/v/fasterrisk?color=blue)](https://pypi.org/project/fasterrisk/)
 [![license](https://img.shields.io/badge/License-BSD-brightgreen)](https://github.com/jiachangliu/FasterRisk/blob/main/LICENSE)
 [![Downloads](https://pepy.tech/badge/fasterrisk)](https://pepy.tech/project/fasterrisk)
+[![downloads](https://img.shields.io/pypi/dm/fasterrisk)](https://pypistats.org/packages/fasterrisk)
 [![arxiv badge](https://img.shields.io/badge/arXiv-2210.05846-red)](https://arxiv.org/abs/2210.05846)
-<!-- [![downloads](https://img.shields.io/pypi/dm/fasterrisk)](https://pypistats.org/packages/fasterrisk) -->
 
 This repository contains source code to our NeurIPS 2022 paper:
 
@@ -57,7 +57,7 @@ python -m pip install fasterrisk # pip install the fasterrisk package
 
 
 # Usage
-Please see the [example.ipynb](./docs/example.ipynbhttps://github.com/jiachangliu/FasterRisk/blob/main/docs/example.ipynb) jupyter notebook on GitHub or [Example Usage](https://fasterrisk.readthedocs.io/en/latest/example.html) on Read the Docs for a detailed tutorial on how to use FasterRisk in a python environment. The detailed descriptions of key functions can be found in the [API Reference](https://fasterrisk.readthedocs.io/en/latest/autoapi/index.html) on Read the Docs.
+Please see the [example.ipynb](https://github.com/jiachangliu/FasterRisk/blob/main/docs/example.ipynb) jupyter notebook on GitHub or [Example Usage](https://fasterrisk.readthedocs.io/en/latest/example.html) on Read the Docs for a detailed tutorial on how to use FasterRisk in a python environment. The detailed descriptions of key functions can be found in the [API Reference](https://fasterrisk.readthedocs.io/en/latest/autoapi/index.html) on Read the Docs.
 
 There are two major two classes for the users to interact with:
 - **RiskScoreOptimizer**
