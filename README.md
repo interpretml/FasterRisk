@@ -14,7 +14,7 @@ This repository contains source code to our NeurIPS 2022 paper:
 - Documentation: [https://fasterrisk.readthedocs.io](https://fasterrisk.readthedocs.io)
 - GitHub: [https://github.com/jiachangliu/FasterRisk](https://github.com/jiachangliu/FasterRisk)
 - PyPI: [https://pypi.org/project/fasterrisk/](https://pypi.org/project/fasterrisk/)
-- Free and open source software: [BSD license](https://github.com/FasterRisk/blob/main/LICENSE)
+- Free and open source software: [BSD license](https://github.com/jiachangliu/FasterRisk/blob/main/LICENSE)
 
 # Table of Content <!-- omit in toc -->
 - [Introduction](#introduction)
