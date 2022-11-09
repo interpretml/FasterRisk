@@ -79,8 +79,13 @@ fasterrisk <- import("fasterrisk")
 ## 2.1 Download Sample Data
 
 ``` r
+data_dir_path <- "../tests"
 train_data_file_path <- "../tests/adult_train_data.csv"
 test_data_file_path <- "../tests/adult_test_data.csv"
+
+if (!file.exists(data_dir_path)){
+    dir.create(file.path(data_dir_path))
+}
 
 if (!file.exists(train_data_file_path)){
     fasterrisk$utils$download_file_from_google_drive('1nuWn0QVG8tk3AN4I4f3abWLcFEP3WPec', train_data_file_path)
@@ -125,7 +130,7 @@ RiskScoreOptimizer_m$optimize()
 sprintf("Optimization takes %f seconds.", Sys.time() - start_time)
 ```
 
-    ## [1] "Optimization takes 12.420722 seconds."
+    ## [1] "Optimization takes 12.077064 seconds."
 
 # 4 Get Risk Score Models
 

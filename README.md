@@ -19,7 +19,8 @@ This repository contains source code to our NeurIPS 2022 paper:
 # Table of Content <!-- omit in toc -->
 - [Introduction](#introduction)
 - [Installation](#installation)
-- [Usage](#usage)
+- [Python Usage](#python-usage)
+- [R tutorial](#r-tutorial)
 - [License](#license)
 - [Contributing](#contributing)
 
@@ -56,7 +57,7 @@ python -m pip install fasterrisk # pip install the fasterrisk package
 ```
 
 
-# Usage
+# Python Usage
 Please see the [example.ipynb](https://github.com/jiachangliu/FasterRisk/blob/main/docs/example.ipynb) jupyter notebook on GitHub or [Example Usage](https://fasterrisk.readthedocs.io/en/latest/example.html) on Read the Docs for a detailed tutorial on how to use FasterRisk in a python environment. The detailed descriptions of key functions can be found in the [API Reference](https://fasterrisk.readthedocs.io/en/latest/autoapi/index.html) on Read the Docs.
 
 There are two major two classes for the users to interact with:
@@ -102,8 +103,11 @@ logisticLoss_train = clf.compute_logisticLoss(X = X_train, y = y_train)
 acc_train, auc_train = clf.get_acc_and_auc(X = X_train, y = y_train) 
 
 # print the risk score model card
-m.print_model_card() 
+m.print_model_card()
 ```
+
+# R tutorial
+FasterRisk can also be easily used inside R. See the [R tutorial](https://github.com/jiachangliu/FasterRisk/blob/main/R_tutorial/README.md) on how to apply FasterRisk on an example dataset. 
 
 # License
 
