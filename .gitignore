@@ -4,8 +4,7 @@ tests/train_test_data_withIntercept.npz
 tests/*.npz
 tests/*.csv
 tests/preprocessing_new.py
-use_FasterRisk_in_R/environment.yml
-use_FasterRisk_in_R/FasterRisk_R_tutorial.Rmd
+R_tutorial/environment.yml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
