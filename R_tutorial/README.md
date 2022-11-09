@@ -84,14 +84,17 @@ train_data_file_path <- "../tests/adult_train_data.csv"
 test_data_file_path <- "../tests/adult_test_data.csv"
 
 if (!file.exists(data_dir_path)){
+    # create the data folder if it doesn't exist
     dir.create(file.path(data_dir_path))
 }
 
 if (!file.exists(train_data_file_path)){
+    # download sample training data if it doesn't exists
     fasterrisk$utils$download_file_from_google_drive('1nuWn0QVG8tk3AN4I4f3abWLcFEP3WPec', train_data_file_path)
 }
 
 if (!file.exists(train_data_file_path)){
+    # download sample test data if it doesn't exists
     fasterrisk$utils$download_file_from_google_drive('1TyBO02LiGfHbatPWU4nzc8AndtIF-7WH', test_data_file_path)
 }
 ```
@@ -103,12 +106,12 @@ np <- import("numpy", convert=FALSE)
 train_df <- read.csv(train_data_file_path)
 train_data <- data.matrix(train_df)
 X_train <- np$array(train_data[, 2:ncol(train_data)])
-y_train <- np$array(train_data[, 1], dtype=np$int)
+y_train <- np$array(train_data[, 1], dtype=np$int) # Check your data! y label must be +1/-1.
 
 test_df <- read.csv(test_data_file_path)
 test_data <- data.matrix(test_df)
 X_test <- np$array(test_data[, 2:ncol(test_data)])
-y_test <- np$array(test_data[, 1], dtype=np$int)
+y_test <- np$array(test_data[, 1], dtype=np$int) # Check your data! y label must be +1/-1.
 ```
 
 # 3 Training the Model
@@ -130,7 +133,7 @@ RiskScoreOptimizer_m$optimize()
 sprintf("Optimization takes %f seconds.", Sys.time() - start_time)
 ```
 
-    ## [1] "Optimization takes 12.077064 seconds."
+    ## [1] "Optimization takes 13.313264 seconds."
 
 # 4 Get Risk Score Models
 
@@ -152,7 +155,7 @@ sprintf("We generate %d risk score models from the sparse diverse pool", length(
 model_index = 1 # first model
 multiplier = multipliers[model_index]
 intercept = sparseDiversePool_beta0_integer[model_index]
-coefficients = np$array(sparseDiversePool_betas_integer[model_index, ])
+coefficients = np$array(sparseDiversePool_betas_integer[model_index, ]) # each row of sparseDiversePool_betas_integer corresponds to a solution of coefficients
 ```
 
 ## 4.3 Use the First Risk Score Model to Do Prediction
@@ -191,10 +194,10 @@ y_test_pred_prob[1:10]
 ## 4.4 Print the First Model Card
 
 ``` r
-X_featureNames = list(colnames(train_df)[-1])[[1]]
+X_featureNames = list(colnames(train_df)[-1])[[1]] # extract the column names from the dataframe. Feature names exclude the first column name because it is the name for the y label
 
 RiskScoreClassifier_m$reset_featureNames(X_featureNames)
-tmp_str = py_capture_output(RiskScoreClassifier_m$print_model_card(), type = c("stdout", "stderr"))
+tmp_str = py_capture_output(RiskScoreClassifier_m$print_model_card(), type = c("stdout", "stderr")) # capture the python standard output and print it inside R
 cat(tmp_str)
 ```
 
@@ -218,12 +221,11 @@ num_models = min(10, length(multipliers))
 for (model_index in 1:num_models){
     multiplier = multipliers[model_index]
     intercept = sparseDiversePool_beta0_integer[model_index]
-    coefficients = np$array(sparseDiversePool_betas_integer[model_index, ])
+    coefficients = np$array(sparseDiversePool_betas_integer[model_index, ]) # each row of sparseDiversePool_betas_integer corresponds to a solution of coefficients
 
     RiskScoreClassifier_m = fasterrisk$fasterrisk$RiskScoreClassifier(multiplier, intercept, coefficients)
     RiskScoreClassifier_m$reset_featureNames(X_featureNames)
-    # RiskScoreClassifier_m$print_model_card()
-    tmp_str = py_capture_output(RiskScoreClassifier_m$print_model_card(), type = c("stdout", "stderr"))
+    tmp_str = py_capture_output(RiskScoreClassifier_m$print_model_card(), type = c("stdout", "stderr")) # capture the python standard output and print it inside R
     cat(tmp_str)
 
     train_loss = RiskScoreClassifier_m$compute_logisticLoss(X_train, y_train)
