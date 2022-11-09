@@ -27,6 +27,108 @@ fasterrisk <- import("fasterrisk")
 train_data_file_path <- "../tests/adult_train_data.csv"
 test_data_file_path <- "../tests/adult_test_data.csv"
 
-download_file_from_google_drive('1nuWn0QVG8tk3AN4I4f3abWLcFEP3WPec', train_data_file_path)
-download_file_from_google_drive('1TyBO02LiGfHbatPWU4nzc8AndtIF-7WH', test_data_file_path)
+if (!file.exists(train_data_file_path)){
+    fasterrisk$utils$download_file_from_google_drive('1nuWn0QVG8tk3AN4I4f3abWLcFEP3WPec', train_data_file_path)
+}
+
+if (!file.exists(train_data_file_path)){
+    fasterrisk$utils$download_file_from_google_drive('1TyBO02LiGfHbatPWU4nzc8AndtIF-7WH', test_data_file_path)
+}
+```
+
+```{r}
+np <- import("numpy", convert=FALSE)
+train_df <- read.csv(train_data_file_path)
+train_data <- data.matrix(train_df)
+X_train <- np$array(train_data[, 2:ncol(train_data)])
+y_train <- np$array(train_data[, 1], dtype=np$int)
+
+test_df <- read.csv(test_data_file_path)
+test_data <- data.matrix(test_df)
+X_test <- np$array(test_data[, 2:ncol(test_data)])
+y_test <- np$array(test_data[, 1], dtype=np$int)
+```
+
+```{r}
+sparsity <- as.integer(5)
+parent_size <- as.integer(10)
+
+RiskScoreOptimizer_m <- fasterrisk$fasterrisk$RiskScoreOptimizer(X = X_train, y = y_train, k = sparsity, parent_size = parent_size)
+
+```
+
+```{r}
+start_time <- Sys.time()
+RiskScoreOptimizer_m$optimize()
+sprintf("Optimization takes %f seconds.", Sys.time() - start_time)
+```
+
+```{r}
+# multipliers, sparseDiversePool_beta0_integer, sparseDiversePool_betas_integer = RiskScoreOptimizer_m$get_models()
+solutions = RiskScoreOptimizer_m$get_models()
+multipliers = solutions[1][[1]]
+sparseDiversePool_beta0_integer = solutions[2][[1]]
+sparseDiversePool_betas_integer = solutions[3][[1]]
+sprintf("We generate %d risk score models from the sparse diverse pool", length(multipliers))
+```
+
+```{r}
+model_index = 1 # first model
+multiplier = multipliers[model_index]
+intercept = sparseDiversePool_beta0_integer[model_index]
+coefficients = np$array(sparseDiversePool_betas_integer[model_index, ])
+```
+
+```{r}
+RiskScoreClassifier_m = fasterrisk$fasterrisk$RiskScoreClassifier(multiplier, intercept, coefficients)
+```
+
+```{r}
+y_test_pred = RiskScoreClassifier_m$predict(X_test)
+print("y_test are predicted to be:")
+y_test_pred
+```
+
+```{r}
+y_test_pred_prob = RiskScoreClassifier_m$predict_prob(X_test)
+print("The risk probabilities of having y_test to be +1 are:")
+y_test_pred_prob
+```
+
+```{r}
+X_featureNames = list(colnames(train_df)[-1])[[1]]
+
+RiskScoreClassifier_m$reset_featureNames(X_featureNames)
+RiskScoreClassifier_m$print_model_card()
+```
+
+```{r}
+num_models = min(10, length(multipliers))
+
+for (model_index in 1:num_models){
+    multiplier = multipliers[model_index]
+    intercept = sparseDiversePool_beta0_integer[model_index]
+    coefficients = np$array(sparseDiversePool_betas_integer[model_index, ])
+
+    RiskScoreClassifier_m = fasterrisk$fasterrisk$RiskScoreClassifier(multiplier, intercept, coefficients)
+    RiskScoreClassifier_m$reset_featureNames(X_featureNames)
+    RiskScoreClassifier_m$print_model_card()
+
+    train_loss = RiskScoreClassifier_m$compute_logisticLoss(X_train, y_train)
+    train_results = RiskScoreClassifier_m$get_acc_and_auc(X_train, y_train)
+    train_acc = train_results[1][[1]]
+    train_auc = train_results[2][[1]]
+    test_results = RiskScoreClassifier_m$get_acc_and_auc(X_test, y_test)
+    test_acc = test_results[1][[1]]
+    test_auc = test_results[2][[1]]
+
+    tmp_str = sprintf("The logistic loss on the training set is %f", train_loss)
+    print(tmp_str)
+    tmp_str = sprintf("The training accuracy and AUC are %f and %f", train_acc*100, train_auc)
+    print(tmp_str)
+    tmp_str = sprintf("The test accuracy and AUC are are %f and %f", test_acc*100, test_auc)
+    print(tmp_str)
+    tmp_str = cat("\n")
+    print(tmp_str)
+}
 ```
