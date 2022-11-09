@@ -1,28 +1,47 @@
 ---
 title: Tutorial on Using FasterRisk inside R
-output: html_document
+# output: html_document
+author: Jiachang Liu
+date: "Last compiled on `r format(Sys.time(), '%B %d, %Y')`"
+output:
+    md_document:
+        variant: markdown_github
+        toc: true
+        number_sections: true
+        includes: 
+            in_header: header.md
 ---
 
-```{r}
-install.packages("reticulate")
+<!-- Rscript -e "rmarkdown::render('header.Rmd'); rmarkdown::render('README.Rmd')" -->
+
+# Installation
+
+## Install the reticulate Package
+```{r, results='hide', message=FALSE, warning=FALSE}
+install.packages("reticulate", repos = "http://cran.us.r-project.org")
 library(reticulate)
 ```
 
-```{r}
+## Create a Python Virtual Environment
+```{r, results='hide', message=FALSE}
 version <- "3.9.12"
 install_python(version)
 virtualenv_create(envname="FasterRisk-environment", version = version)
 use_virtualenv("FasterRisk-environment")
 ```
 
-```{r}
+## Install the FasterRisk Package from PyPI
+```{r, results='hide', message=FALSE, warning=FALSE}
 py_install("fasterrisk", pip=TRUE, envname="FasterRisk-environment")
 ```
 
-```{r}
+# Preparation before Training
+```{r, warning=FALSE}
 fasterrisk <- import("fasterrisk")
 ```
 
+
+## Download Sample Data
 ```{r}
 train_data_file_path <- "../tests/adult_train_data.csv"
 test_data_file_path <- "../tests/adult_test_data.csv"
@@ -36,6 +55,7 @@ if (!file.exists(train_data_file_path)){
 }
 ```
 
+## Read Sample Data
 ```{r}
 np <- import("numpy", convert=FALSE)
 train_df <- read.csv(train_data_file_path)
@@ -49,22 +69,27 @@ X_test <- np$array(test_data[, 2:ncol(test_data)])
 y_test <- np$array(test_data[, 1], dtype=np$int)
 ```
 
+# Training the Model
+
+## Create A Model Class
 ```{r}
 sparsity <- as.integer(5)
 parent_size <- as.integer(10)
 
 RiskScoreOptimizer_m <- fasterrisk$fasterrisk$RiskScoreOptimizer(X = X_train, y = y_train, k = sparsity, parent_size = parent_size)
-
 ```
 
+## Train the Model
 ```{r}
 start_time <- Sys.time()
 RiskScoreOptimizer_m$optimize()
 sprintf("Optimization takes %f seconds.", Sys.time() - start_time)
 ```
 
+# Get Risk Score Models
+
+## Get Solutions from the Trained Model Class
 ```{r}
-# multipliers, sparseDiversePool_beta0_integer, sparseDiversePool_betas_integer = RiskScoreOptimizer_m$get_models()
 solutions = RiskScoreOptimizer_m$get_models()
 multipliers = solutions[1][[1]]
 sparseDiversePool_beta0_integer = solutions[2][[1]]
@@ -72,6 +97,7 @@ sparseDiversePool_betas_integer = solutions[3][[1]]
 sprintf("We generate %d risk score models from the sparse diverse pool", length(multipliers))
 ```
 
+## Access the First Risk Score Model
 ```{r}
 model_index = 1 # first model
 multiplier = multipliers[model_index]
@@ -79,29 +105,33 @@ intercept = sparseDiversePool_beta0_integer[model_index]
 coefficients = np$array(sparseDiversePool_betas_integer[model_index, ])
 ```
 
+## Use the First Risk Score Model to Do Prediction
 ```{r}
 RiskScoreClassifier_m = fasterrisk$fasterrisk$RiskScoreClassifier(multiplier, intercept, coefficients)
 ```
 
 ```{r}
 y_test_pred = RiskScoreClassifier_m$predict(X_test)
-print("y_test are predicted to be:")
-y_test_pred
+print("y_test are predicted to be (first 10 values):")
+y_test_pred[1:10]
 ```
 
 ```{r}
 y_test_pred_prob = RiskScoreClassifier_m$predict_prob(X_test)
-print("The risk probabilities of having y_test to be +1 are:")
-y_test_pred_prob
+print("The risk probabilities of having y_test to be +1 are (first 10 values):")
+y_test_pred_prob[1:10]
 ```
 
+## Print the First Model Card
 ```{r}
 X_featureNames = list(colnames(train_df)[-1])[[1]]
 
 RiskScoreClassifier_m$reset_featureNames(X_featureNames)
-RiskScoreClassifier_m$print_model_card()
+tmp_str = py_capture_output(RiskScoreClassifier_m$print_model_card(), type = c("stdout", "stderr"))
+cat(tmp_str)
 ```
 
+## Print Top 10 Model Cards from the Pool and Their Performance Metrics
 ```{r}
 num_models = min(10, length(multipliers))
 
@@ -112,7 +142,9 @@ for (model_index in 1:num_models){
 
     RiskScoreClassifier_m = fasterrisk$fasterrisk$RiskScoreClassifier(multiplier, intercept, coefficients)
     RiskScoreClassifier_m$reset_featureNames(X_featureNames)
-    RiskScoreClassifier_m$print_model_card()
+    # RiskScoreClassifier_m$print_model_card()
+    tmp_str = py_capture_output(RiskScoreClassifier_m$print_model_card(), type = c("stdout", "stderr"))
+    cat(tmp_str)
 
     train_loss = RiskScoreClassifier_m$compute_logisticLoss(X_train, y_train)
     train_results = RiskScoreClassifier_m$get_acc_and_auc(X_train, y_train)
@@ -128,7 +160,6 @@ for (model_index in 1:num_models){
     print(tmp_str)
     tmp_str = sprintf("The test accuracy and AUC are are %f and %f", test_acc*100, test_auc)
     print(tmp_str)
-    tmp_str = cat("\n")
-    print(tmp_str)
+    cat("\n")
 }
 ```

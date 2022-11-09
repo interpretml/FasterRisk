@@ -1,0 +1,15 @@
+
+---
+title: Create Header for README.Rmd
+author: Jiachang Liu
+date: "Last compiled on `r format(Sys.time(), '%B %d, %Y')`"
+output:
+    md_document:
+        variant: markdown_github
+---
+
+
+# Tutorial on Using FasterRisk Inside R
+Author: Jiachang Liu
+
+Date: Last Compiled on `r format(Sys.time(), '%B %d, %Y')`

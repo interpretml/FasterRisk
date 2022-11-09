@@ -1,0 +1,7 @@
+name: FasterRisk_environment
+channels:
+  - conda-forge
+  - r
+dependencies:
+  - r-base
+  - r-essentials
