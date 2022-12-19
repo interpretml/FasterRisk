@@ -26,6 +26,8 @@ class logRegModel:
         self.lbs[self.scaled_feature_indices] *= self.X_norm[self.scaled_feature_indices]
         self.ubs = original_ub * np.ones(self.p)
         self.ubs[self.scaled_feature_indices] *= self.X_norm[self.scaled_feature_indices]
+
+        self.total_child_added = 0
     
     def warm_start_from_original_beta0_betas(self, original_beta0, original_betas):
         # betas_initial has dimension (p+1, 1)

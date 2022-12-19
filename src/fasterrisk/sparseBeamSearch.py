@@ -57,6 +57,7 @@ class sparseLogRegModel(logRegModel):
             self.betas_arr_child[child_id, new_js[l]] = beta_new_js[l]
             tmp_support_str = str(get_support_indices(self.betas_arr_child[child_id]))
             if tmp_support_str not in self.forbidden_support:
+                self.total_child_added += 1 # count how many unique child has been added for a specified support size
                 self.forbidden_support.add(tmp_support_str)
 
                 self.ExpyXB_arr_child[child_id], self.beta0_arr_child[child_id], self.betas_arr_child[child_id] = self.finetune_on_current_support(self.ExpyXB_arr_child[child_id], self.beta0_arr_child[child_id], self.betas_arr_child[child_id])
@@ -73,11 +74,12 @@ class sparseLogRegModel(logRegModel):
             how many child solutions to generate based on each parent solution, by default 10
         """
         self.loss_arr_child.fill(1e12)
+        self.total_child_added = 0
 
         for i in range(self.num_parent):
             self.expand_parent_i_support_via_OMP_by_1(i, child_size=child_size)
 
-        child_indices = np.argsort(self.loss_arr_child)[:parent_size] # get indices of children which have the smallest losses
+        child_indices = np.argsort(self.loss_arr_child)[:min(parent_size, self.total_child_added)] # get indices of children which have the smallest losses
         num_child_indices = len(child_indices)
         self.ExpyXB_arr_parent[:num_child_indices], self.beta0_arr_parent[:num_child_indices], self.betas_arr_parent[:num_child_indices] = self.ExpyXB_arr_child[child_indices], self.beta0_arr_child[child_indices], self.betas_arr_child[child_indices]
 
