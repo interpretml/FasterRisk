@@ -123,7 +123,7 @@ class RiskScoreOptimizer:
 
 
 class RiskScoreClassifier:
-    def __init__(self, multiplier, intercept, coefficients, featureNames = None):
+    def __init__(self, multiplier, intercept, coefficients, featureNames = None, X_train = None):
         """Initialize a risk score classifier. Then we can use this classifier to predict labels, predict probabilites, and calculate total logistic loss
 
         Parameters
@@ -141,6 +141,8 @@ class RiskScoreClassifier:
 
         self.scaled_intercept = self.intercept / self.multiplier
         self.scaled_coefficients = self.coefficients / self.multiplier
+
+        self.X_train = X_train
 
         self.reset_featureNames(featureNames)
 
@@ -262,11 +264,26 @@ class RiskScoreClassifier:
         print(score_row)
         print(risk_row)
 
-    def _print_score_risk_table(self):
+    def _print_score_risk_table(self, quantile_len):
+
         nonzero_indices = get_support_indices(self.coefficients)
-        all_product_booleans = get_all_product_booleans(len(nonzero_indices))
-        all_scores = all_product_booleans.dot(self.coefficients[nonzero_indices])
-        all_scores = np.unique(all_scores)
+        len_nonzero_indices = len(nonzero_indices)
+
+        if len_nonzero_indices <= 10:
+            ### method 1: get all possible scores; Drawback for large support size, get the product booleans is too many
+            all_product_booleans = get_all_product_booleans(len_nonzero_indices)
+            all_scores = all_product_booleans.dot(self.coefficients[nonzero_indices])
+            all_scores = np.unique(all_scores)
+        else:
+            # ### method 2: calculate all scores in the training set, pick the top 20 quantile points
+            assert self.X_train is not None, "There are more than 10 nonzero coefficients for the risk scoring system. The number of possible total scores is too many!\n\nPlease consider re-initialize your RiskScoreClassifier_m by providing the training dataset features X_train as follows:\n\n    RiskScoreClassifier_m = RiskScoreClassifier(multiplier, intercept, coefficients, X_train = X_train)"
+
+            all_scores = self.X_train.dot(self.coefficients)
+            all_scores = np.unique(all_scores)
+            quantile_len = min(quantile_len, len(all_scores))
+            quantile_points = np.asarray(range(1, 1+quantile_len)) / quantile_len
+            all_scores = np.quantile(all_scores, quantile_points, method = "closest_observation")
+
         all_scaled_scores = (self.intercept + all_scores) / self.multiplier
         all_risks = 1 / (1 + np.exp(-all_scaled_scores))
 
@@ -274,10 +291,10 @@ class RiskScoreClassifier:
         self._print_score_risk_row(all_scores[:num_scores_div_2], all_risks[:num_scores_div_2])
         self._print_score_risk_row(all_scores[num_scores_div_2:], all_risks[num_scores_div_2:])
 
-    def print_model_card(self):
+    def print_model_card(self, quantile_len=20):
         """Print the score evaluation table and score risk table onto terminal
         """
         self._print_score_calculation_table()
-        self._print_score_risk_table()
+        self._print_score_risk_table(quantile_len = quantile_len)
         
 
