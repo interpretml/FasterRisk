@@ -5,6 +5,7 @@ tests/*.npz
 tests/*.csv
 tests/preprocessing_new.py
 R_tutorial/environment.yml
+tests/ttest_imbalance.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
