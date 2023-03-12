@@ -1,7 +1,12 @@
 # Changelog
 
 <!--next-version-placeholder-->
-## v0.1.3 (12/18/2022)
+## v0.1.6 (03/12/2023)
+
+- Fix example jupyter notebook file downloading issue
+- Allow users to print out quantile points (default=20) for total risk scores when printing out the risk score tables.
+
+## v0.1.5 (12/18/2022)
 
 - Add a tutorial for R users.
 - Fix the bug when parent_size is bigger than total number of children added to the forbidden support.
