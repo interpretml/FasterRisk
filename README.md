@@ -132,3 +132,19 @@ If you find our work useful in your research, please consider citing the followi
   booktitle={Proceedings of Neural Information Processing Systems},
   year={2022}
 }
+```
+
+<!-- # How to Build and Push to pypi-test and pypi
+```terminal
+rm dist/*
+poetry build
+poetry config repositories.test-pypi https://test.pypi.org/legacy/
+
+# push to pypi-test
+poetry publish -r test-pypi -u __token__ -p pypi-TOKEN
+python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple fasterrisk
+
+# push to pypi
+poetry publish -u __token__ -p pypi-TOKEN
+
+``` -->
