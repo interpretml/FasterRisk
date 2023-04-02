@@ -9,6 +9,21 @@ class sparseDiversePoolLogRegModel(logRegModel):
     def __init__(self, X, y, lambda2=1e-8, intercept=True, original_lb=-5, original_ub=5):
         super().__init__(X=X, y=y, lambda2=lambda2, intercept=intercept, original_lb=original_lb, original_ub=original_ub)
    
+    def getAvailableIndices_for_expansion_but_avoid_l(self, nonsupport, support, l):
+        """Get the indices of features that can be added to the support of the current sparse solution
+
+        Parameters
+        ----------
+        betas : ndarray
+            (1D array with `float` type) The current sparse solution
+
+        Returns
+        -------
+        available_indices : ndarray
+            (1D array with `int` type) The indices of features that can be added to the support of the current sparse solution
+        """
+        return nonsupport
+
     def get_sparseDiversePool(self, gap_tolerance=0.05, select_top_m=10, maxAttempts=50):
         """For the current sparse solution, get from the sparse diverse pool [select_top_m] solutions, which perform equally well as the current sparse solution. This sparse diverse pool is also called the Rashomon set. We discover new solutions by swapping 1 feature in the support of the current sparse solution.
 
@@ -51,6 +66,8 @@ class sparseDiversePoolLogRegModel(logRegModel):
         sparseDiversePool_loss[-1] = compute_logisticLoss_from_ExpyXB(self.ExpyXB) + self.lambda2 * self.betas[nonzero_indices].dot(self.betas[nonzero_indices])
 
         betas_squareSum = self.betas[nonzero_indices].dot(self.betas[nonzero_indices])
+
+        totalNum_in_diverseSet = 1
         for num_old_j, old_j in enumerate(nonzero_indices):
             # pick $maxAttempt$ number of features that can replace old_j
             sparseDiversePool_start = num_old_j * maxAttempts
@@ -62,11 +79,13 @@ class sparseDiversePoolLogRegModel(logRegModel):
             
             betas_no_old_j_squareSum = betas_squareSum - self.betas[old_j]**2
 
-            grad_on_nonsupport = -self.yXT[zero_indices].dot(np.reciprocal(1+sparseDiversePool_ExpyXB[sparseDiversePool_start]))
-            abs_grad_on_nonsupport = np.abs(grad_on_nonsupport)
+            availableIndices = self.getAvailableIndices_for_expansion_but_avoid_l(zero_indices, nonzero_indices, old_j) 
+
+            grad_on_availableIndices = -self.yXT[availableIndices].dot(np.reciprocal(1+sparseDiversePool_ExpyXB[sparseDiversePool_start]))
+            abs_grad_on_availableIndices = np.abs(grad_on_availableIndices)
 
             # new_js = np.argpartition(abs_full_grad, -max_num_new_js)[-max_num_new_js:]
-            new_js = zero_indices[np.argsort(-abs_grad_on_nonsupport)[:max_num_new_js]]
+            new_js = availableIndices[np.argsort(-abs_grad_on_availableIndices)[:max_num_new_js]]
 
             for num_new_j, new_j in enumerate(new_js):
                 sparseDiversePool_index = sparseDiversePool_start + num_new_j
@@ -76,11 +95,13 @@ class sparseDiversePoolLogRegModel(logRegModel):
                 loss_sparseDiversePool_index = compute_logisticLoss_from_ExpyXB(sparseDiversePool_ExpyXB[sparseDiversePool_index]) + self.lambda2 * (betas_no_old_j_squareSum + sparseDiversePool_betas[sparseDiversePool_index, new_j] ** 2)
 
                 if (loss_sparseDiversePool_index - sparseDiversePool_loss[-1]) / sparseDiversePool_loss[-1] < gap_tolerance:
+                    totalNum_in_diverseSet += 1
+
                     sparseDiversePool_ExpyXB[sparseDiversePool_index], sparseDiversePool_beta0[sparseDiversePool_index], sparseDiversePool_betas[sparseDiversePool_index] = self.finetune_on_current_support(sparseDiversePool_ExpyXB[sparseDiversePool_index], sparseDiversePool_beta0[sparseDiversePool_index], sparseDiversePool_betas[sparseDiversePool_index])
 
                     sparseDiversePool_loss[sparseDiversePool_index] = compute_logisticLoss_from_ExpyXB(sparseDiversePool_ExpyXB[sparseDiversePool_index]) + self.lambda2 * (betas_no_old_j_squareSum + sparseDiversePool_betas[sparseDiversePool_index, new_j] ** 2)
 
-        selected_sparseDiversePool_indices = np.argsort(sparseDiversePool_loss)[:select_top_m]
+        selected_sparseDiversePool_indices = np.argsort(sparseDiversePool_loss)[:totalNum_in_diverseSet][:select_top_m]
 
         top_m_original_betas = np.zeros((len(selected_sparseDiversePool_indices), self.p))
         top_m_original_betas[:, self.scaled_feature_indices] = sparseDiversePool_betas[selected_sparseDiversePool_indices][:, self.scaled_feature_indices] / self.X_norm[self.scaled_feature_indices]

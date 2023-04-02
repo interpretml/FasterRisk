@@ -8,6 +8,22 @@ from fasterrisk.base_model import logRegModel
 class sparseLogRegModel(logRegModel):
     def __init__(self, X, y, lambda2=1e-8, intercept=True, original_lb=-5, original_ub=5):
         super().__init__(X=X, y=y, lambda2=lambda2, intercept=intercept, original_lb=original_lb, original_ub=original_ub)
+    
+    def getAvailableIndices_for_expansion(self, betas):
+        """Get the indices of features that can be added to the support of the current sparse solution
+
+        Parameters
+        ----------
+        betas : ndarray
+            (1D array with `float` type) The current sparse solution
+
+        Returns
+        -------
+        available_indices : ndarray
+            (1D array with `int` type) The indices of features that can be added to the support of the current sparse solution
+        """
+        available_indices = get_nonsupport_indices(betas)
+        return available_indices
    
     def expand_parent_i_support_via_OMP_by_1(self, i, child_size=10):
         """For parent solution i, generate [child_size] child solutions
@@ -19,7 +35,8 @@ class sparseLogRegModel(logRegModel):
         child_size : int, optional
             how many child solutions to generate based on parent solution i, by default 10
         """
-        non_support = get_nonsupport_indices(self.betas_arr_parent[i])
+        # non_support = get_nonsupport_indices(self.betas_arr_parent[i])
+        non_support = self.getAvailableIndices_for_expansion(self.betas_arr_parent[i])
         support = get_support_indices(self.betas_arr_parent[i])
 
         grad_on_non_support = self.yXT[non_support].dot(np.reciprocal(1+self.ExpyXB_arr_parent[i]))
