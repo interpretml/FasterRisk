@@ -1,6 +1,10 @@
 # Changelog
 
 <!--next-version-placeholder-->
+## v0.1.7 (04/03/2023)
+
+- Add the functionality of training sparsity-constrained risk scoring system
+
 ## v0.1.6 (03/12/2023)
 
 - Fix example jupyter notebook file downloading issue
