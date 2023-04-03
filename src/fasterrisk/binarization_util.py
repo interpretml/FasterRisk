@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-def convert_continuous_df_to_binary_df(df, num_quantiles=100):
+def convert_continuous_df_to_binary_df(df, num_quantiles=100, get_featureIndex_to_groupIndex=False):
     """Convert a dataframe with continuous features to a dataframe with binary features by thresholding
 
     Parameters
@@ -10,6 +10,8 @@ def convert_continuous_df_to_binary_df(df, num_quantiles=100):
         original dataframe where there are columns with continuous features
     num_quantiles : int, optional
         number of points we pick from quantile as thresholds if a column has too many unique values, by default 100
+    get_featureIndex_to_groupIndex : bool, optional
+        whether to return a numpy array that maps feature index to group index, by default False
 
     Returns
     -------
@@ -26,10 +28,12 @@ def convert_continuous_df_to_binary_df(df, num_quantiles=100):
 
     binarized_dict = {}
 
+    featureIndex_to_groupIndex = []
     for i in range(0, len(colnames)):
         uni = df[colnames[i]].unique()
         if len(uni) == 2:
             binarized_dict[colnames[i]] = np.asarray(df[colnames[i]], dtype=int)
+            featureIndex_to_groupIndex.append(i)
             continue
 
         uni.sort()
@@ -43,8 +47,11 @@ def convert_continuous_df_to_binary_df(df, num_quantiles=100):
             tmp_feature[zero_indices] = 0
 
             binarized_dict[tmp_name] = tmp_feature
+            featureIndex_to_groupIndex.append(i)
 
 
     binarized_df = pd.DataFrame(binarized_dict)
     print("Finish converting continuous features to binary features......")
+    if get_featureIndex_to_groupIndex:
+        return binarized_df, np.asarray(featureIndex_to_groupIndex, dtype=int)
     return binarized_df

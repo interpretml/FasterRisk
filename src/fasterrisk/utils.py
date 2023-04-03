@@ -2,6 +2,14 @@ import numpy as np
 from itertools import product
 import requests
 
+def get_groupIndex_to_featureIndices(featureIndex_to_groupIndex):
+    groupIndex_to_featureIndices = {}
+    for featureIndex, groupIndex in enumerate(featureIndex_to_groupIndex):
+        if groupIndex not in groupIndex_to_featureIndices:
+            groupIndex_to_featureIndices[groupIndex] = set()
+        groupIndex_to_featureIndices[groupIndex].add(featureIndex)
+    return groupIndex_to_featureIndices
+
 def get_support_indices(betas):
     return np.where(np.abs(betas) > 1e-9)[0]
 

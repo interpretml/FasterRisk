@@ -4,7 +4,7 @@ import sys
 # warnings.filterwarnings("ignore")
 from fasterrisk.utils import get_support_indices, get_nonsupport_indices, compute_logisticLoss_from_ExpyXB
 from fasterrisk.base_model import logRegModel
-   
+
 class sparseLogRegModel(logRegModel):
     def __init__(self, X, y, lambda2=1e-8, intercept=True, original_lb=-5, original_ub=5):
         super().__init__(X=X, y=y, lambda2=lambda2, intercept=intercept, original_lb=original_lb, original_ub=original_ub)
@@ -153,3 +153,38 @@ class sparseLogRegModel(logRegModel):
             self.beamSearch_multipleSupports_via_OMP_by_1(parent_size=parent_size, child_size=child_size)
 
         self.ExpyXB, self.beta0, self.betas = self.ExpyXB_arr_parent[0], self.beta0_arr_parent[0], self.betas_arr_parent[0]
+
+class groupSparseLogRegModel(sparseLogRegModel):
+    def __init__(self, X, y, lambda2=1e-8, intercept=True, original_lb=-5, original_ub=5, group_sparsity=10, featureIndex_to_groupIndex=None, groupIndex_to_featureIndices=None):
+        super().__init__(X=X, y=y, lambda2=lambda2, intercept=intercept, original_lb=original_lb, original_ub=original_ub)
+
+        self.group_sparsity = group_sparsity
+        self.featureIndex_to_groupIndex = featureIndex_to_groupIndex # this is a numpy array
+        self.groupIndex_to_featureIndices = groupIndex_to_featureIndices # this is a dictionary of sets
+    
+    def getAvailableIndices_for_expansion(self, betas):
+        """Get the indices of features that can be added to the support of the current sparse solution
+
+        Parameters
+        ----------
+        betas : ndarray
+            (1D array with `float` type) The current sparse solution
+
+        Returns
+        -------
+        available_indices : ndarray
+            (1D array with `int` type) The indices of features that can be added to the support of the current sparse solution
+        """
+        support = get_support_indices(betas)
+        existing_groupIndices = np.unique(self.featureIndex_to_groupIndex[support])
+        if len(existing_groupIndices) < self.group_sparsity:
+            available_indices = get_nonsupport_indices(betas)
+        else:
+            available_indices = set()
+            for groupIndex in existing_groupIndices:
+                available_indices.update(self.groupIndex_to_featureIndices[groupIndex])
+            available_indices = available_indices - set(support)
+            available_indices = np.array(list(available_indices), dtype=int)
+
+        return available_indices
+   

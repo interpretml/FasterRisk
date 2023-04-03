@@ -116,3 +116,46 @@ class sparseDiversePoolLogRegModel(logRegModel):
         original_sparseDiversePool_solution[0] -= self.X_mean.T @ original_sparseDiversePool_solution[1:]
         
         return original_sparseDiversePool_solution # (1+p, m) m is the number of solutions in the pool
+
+class groupSparseDiversePoolLogRegModel(sparseDiversePoolLogRegModel):
+    def __init__(self, X, y, lambda2=1e-8, intercept=True, original_lb=-5, original_ub=5, group_sparsity=10, featureIndex_to_groupIndex=None, groupIndex_to_featureIndices=None):
+        super().__init__(X=X, y=y, lambda2=lambda2, intercept=intercept, original_lb=original_lb, original_ub=original_ub)
+
+        self.group_sparsity = group_sparsity
+        self.featureIndex_to_groupIndex = featureIndex_to_groupIndex
+        self.groupIndex_to_featureIndices = groupIndex_to_featureIndices
+    
+    def getAvailableIndices_for_expansion_but_avoid_l(self, nonsupport, support, l):
+        """Get the indices of features that can be added to the support of the current sparse solution
+
+        Parameters
+        ----------
+        nonsupport : ndarray
+            (1D array with `int` type) The indices of features that are not in the support of the current sparse solution
+        support : ndarray
+            (1D array with `int` type) The indices of features that are in the support of the current sparse solution
+        l : int
+            The index of the feature that is to be removed from the support of the current sparse solution and this index l belongs to support
+
+        Returns
+        -------
+        available_indices : ndarray
+            (1D array with `int` type) The indices of features that can be added to the support of the current sparse solution when we delete index l
+        """
+        existing_groupIndices, freq_existing_groupIndices = np.unique(self.featureIndex_to_groupIndex[support], return_counts=True)
+        freq_groupIndex_of_l = freq_existing_groupIndices[existing_groupIndices == self.featureIndex_to_groupIndex[l]]
+        if len(existing_groupIndices) < self.group_sparsity:
+            # we have not reached the group size yet 
+            available_indices = nonsupport
+        elif freq_groupIndex_of_l == 1:
+            # or if we remove index l, we still do not reach the group size
+            available_indices = nonsupport
+        else:
+            # we reach the group size even if we remove index l
+            available_indices = set()
+            for groupIndex in existing_groupIndices:
+                available_indices.update(self.groupIndex_to_featureIndices[groupIndex])
+            available_indices = available_indices - set(support)
+            available_indices = np.array(list(available_indices), dtype=int)
+
+        return available_indices

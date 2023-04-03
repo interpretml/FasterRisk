@@ -1,17 +1,18 @@
 import numpy as np
 import sklearn.metrics
 
-from fasterrisk.sparseBeamSearch import sparseLogRegModel
-from fasterrisk.sparseDiversePool import sparseDiversePoolLogRegModel
+from fasterrisk.sparseBeamSearch import sparseLogRegModel, groupSparseLogRegModel
+from fasterrisk.sparseDiversePool import sparseDiversePoolLogRegModel, groupSparseDiversePoolLogRegModel
 from fasterrisk.rounding import starRaySearchModel
 
-from fasterrisk.utils import compute_logisticLoss_from_X_y_beta0_betas, get_all_product_booleans, get_support_indices, isEqual_upTo_8decimal, isEqual_upTo_16decimal, get_all_product_booleans
+from fasterrisk.utils import compute_logisticLoss_from_X_y_beta0_betas, get_all_product_booleans, get_support_indices, isEqual_upTo_8decimal, isEqual_upTo_16decimal, get_all_product_booleans, get_groupIndex_to_featureIndices
 
 class RiskScoreOptimizer:
     def __init__(self, X, y, k, select_top_m=50, lb=-5, ub=5, \
                  gap_tolerance=0.05, parent_size=10, child_size=None, \
                  maxAttempts=50, num_ray_search=20, \
-                 lineSearch_early_stop_tolerance=0.001):
+                 lineSearch_early_stop_tolerance=0.001, \
+                 group_sparsity=None, featureIndex_to_groupIndex=None):
         """Initialize the RiskScoreOptimizer class, which performs sparseBeamSearch and generates integer sparseDiverseSet
 
         Parameters
@@ -38,6 +39,10 @@ class RiskScoreOptimizer:
             how many multipliers to try for each continuous sparse solution, by default 20
         lineSearch_early_stop_tolerance : float, optional
             tolerance level to stop linesearch early (error_of_loss_difference/loss_of_continuous_solution), by default 0.001
+        group_sparsity : int, optional
+            number of groups to be selected, by default None
+        featureIndex_to_groupIndex : ndarray, optional
+            (1D array with `int` type) featureIndex_to_groupIndex[i] is the group index of feature i, by default None
         """
 
         # check the formats of inputs X and y
@@ -66,8 +71,24 @@ class RiskScoreOptimizer:
         assert ub >= 0, "ub needs to be >= 0"
         assert lb <= 0, "lb needs to be <= 0"
 
-        self.sparseLogRegModel_object = sparseLogRegModel(X, y, intercept=True, original_lb=lb, original_ub=ub)
-        self.sparseDiversePoolLogRegModel_object = sparseDiversePoolLogRegModel(X, y, intercept=True, original_lb=lb, original_ub=ub)
+        self.group_sparsity = group_sparsity
+        self.featureIndex_to_groupIndex = featureIndex_to_groupIndex
+
+        if self.group_sparsity is None:
+            self.sparseLogRegModel_object = sparseLogRegModel(X, y, intercept=True, original_lb=lb, original_ub=ub)
+            self.sparseDiversePoolLogRegModel_object = sparseDiversePoolLogRegModel(X, y, intercept=True, original_lb=lb, original_ub=ub)
+        else:
+            assert type(group_sparsity) == int, "group_sparsity needs to be an integer"
+            assert group_sparsity > 0, "group_sparsity needs to be > 0!"
+
+            assert self.featureIndex_to_groupIndex is not None, "featureIndex_to_groupIndex must be provided if group_sparsity is not None"
+            assert type(self.featureIndex_to_groupIndex[0]) == np.int_, "featureIndex_to_groupIndex needs to be a NumPy integer array"
+        
+            self.groupIndex_to_featureIndices = get_groupIndex_to_featureIndices(self.featureIndex_to_groupIndex)
+
+            self.sparseLogRegModel_object = groupSparseLogRegModel(X, y, intercept=True, original_lb=lb, original_ub=ub, group_sparsity=self.group_sparsity, featureIndex_to_groupIndex=self.featureIndex_to_groupIndex, groupIndex_to_featureIndices=self.groupIndex_to_featureIndices)
+            self.sparseDiversePoolLogRegModel_object = groupSparseDiversePoolLogRegModel(X, y, intercept=True, original_lb=lb, original_ub=ub, group_sparsity=self.group_sparsity, featureIndex_to_groupIndex=self.featureIndex_to_groupIndex, groupIndex_to_featureIndices=self.groupIndex_to_featureIndices)
+
         self.starRaySearchModel_object = starRaySearchModel(X = X, y = y, lb=lb, ub=ub, num_ray_search=num_ray_search, early_stop_tolerance=lineSearch_early_stop_tolerance)
 
         self.IntegerPoolIsSorted = False
@@ -89,7 +110,7 @@ class RiskScoreOptimizer:
         sparseDiversePool_XB = (self.sparseDiversePool_beta0_integer.reshape(1, -1) + self.X @ self.sparseDiversePool_betas_integer.transpose()) / (self.multipliers.reshape(1, -1))
         sparseDiversePool_yXB = self.y.reshape(-1, 1) * sparseDiversePool_XB
         sparseDiversePool_ExpyXB = np.exp(sparseDiversePool_yXB)
-        print(sparseDiversePool_ExpyXB.shape)
+        # print(sparseDiversePool_ExpyXB.shape)
         sparseDiversePool_logisticLoss = np.sum(np.log(1.+np.reciprocal(sparseDiversePool_ExpyXB)), axis=0)
         orderedIndices = np.argsort(sparseDiversePool_logisticLoss)
 
