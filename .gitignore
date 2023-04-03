@@ -6,6 +6,7 @@ tests/*.csv
 tests/preprocessing_new.py
 R_tutorial/environment.yml
 tests/ttest_imbalance.py
+jupyter.log
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
