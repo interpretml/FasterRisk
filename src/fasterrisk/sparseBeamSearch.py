@@ -47,7 +47,8 @@ class sparseLogRegModel(logRegModel):
         child_start, child_end = i*child_size, i*child_size + num_new_js
 
         self.ExpyXB_arr_child[child_start:child_end] = self.ExpyXB_arr_parent[i, :] # (num_new_js, n)
-        self.betas_arr_child[child_start:child_end, non_support] = 0
+        # self.betas_arr_child[child_start:child_end, non_support] = 0
+        self.betas_arr_child[child_start:child_end] = 0
         self.betas_arr_child[child_start:child_end, support] = self.betas_arr_parent[i, support]
         self.beta0_arr_child[child_start:child_end] = self.beta0_arr_parent[i]
         

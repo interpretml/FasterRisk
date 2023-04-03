@@ -30,7 +30,7 @@ def test_check_solutions_interface():
     X = np.asarray(X_binarized_df)
 
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=42)
 
     lambda2 = 1e-8
     sparsity = 5
@@ -42,6 +42,7 @@ def test_check_solutions_interface():
     num_ray_search = 20
     lineSearch_early_stop_tolerance = 0.001 
     group_sparsity = 3
+
     
     # obtain sparse scoring systems
     int_sols_dict = {"int_sols": [], "train_accs": [], "test_accs": [], "train_aucs": [], "test_aucs": [], "logisticLosses": [], "multipliers": []}
@@ -77,6 +78,7 @@ def test_check_solutions_interface():
         groupIndices = featureIndex_to_groupIndex[support]
         num_unique_groupIndices = len(np.unique(groupIndices))
         assert num_unique_groupIndices <= group_sparsity, "group sparsity constraint is not satisfied!"
+        assert len(support) <= sparsity, "sparsity constraint is not satisfied!"
 
 if __name__ == "__main__":
     test_check_solutions_interface()
