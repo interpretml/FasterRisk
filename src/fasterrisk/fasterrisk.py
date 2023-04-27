@@ -1,11 +1,23 @@
+import sys
+from io import StringIO
+
 import numpy as np
 import sklearn.metrics
 
-from fasterrisk.sparseBeamSearch import sparseLogRegModel, groupSparseLogRegModel
-from fasterrisk.sparseDiversePool import sparseDiversePoolLogRegModel, groupSparseDiversePoolLogRegModel
 from fasterrisk.rounding import starRaySearchModel
+from fasterrisk.score_visual import (ScoreCardVisualizer, TableVisualizer,
+                                     combine_images, output_to_score_intervals,
+                                     output_to_score_risk_df, save_img_to_pdf)
+from fasterrisk.sparseBeamSearch import (groupSparseLogRegModel,
+                                         sparseLogRegModel)
+from fasterrisk.sparseDiversePool import (groupSparseDiversePoolLogRegModel,
+                                          sparseDiversePoolLogRegModel)
+from fasterrisk.utils import (compute_logisticLoss_from_X_y_beta0_betas,
+                              get_all_product_booleans,
+                              get_groupIndex_to_featureIndices,
+                              get_support_indices, isEqual_upTo_8decimal,
+                              isEqual_upTo_16decimal)
 
-from fasterrisk.utils import compute_logisticLoss_from_X_y_beta0_betas, get_all_product_booleans, get_support_indices, isEqual_upTo_8decimal, isEqual_upTo_16decimal, get_all_product_booleans, get_groupIndex_to_featureIndices
 
 class RiskScoreOptimizer:
     def __init__(self, X, y, k, select_top_m=50, lb=-5, ub=5, \
@@ -312,10 +324,47 @@ class RiskScoreClassifier:
         self._print_score_risk_row(all_scores[:num_scores_div_2], all_risks[:num_scores_div_2])
         self._print_score_risk_row(all_scores[num_scores_div_2:], all_risks[num_scores_div_2:])
 
-    def print_model_card(self, quantile_len=20):
-        """Print the score evaluation table and score risk table onto terminal
+    def print_model_card(self, quantile_len=20, mode: str='raw', custom_order: list[str]=None, card_name: str=None, save_path: str=None):
         """
+        Print risk score card
+
+        Parameters
+        ----------
+        quantile_len : int, optional
+            length of quantiles for risk score table calculation, by default 20
+        mode : str, optional
+            mode of the risk score table generation, if "image", generate risk score card as an image, if "raw", prints score card to terminal, by default 'raw'
+        custom_order : list[str], optional
+            order of the feature, matters only when mode="image", by default None
+        card_name : str, optional
+            name of the card, matters only when mode="image", by default None
+        save_path : str, optional
+            path to save the generated image as PDF, matters only whe mode="image", by default None
+        """
+        assert mode in ['raw', 'image'], 'mode not supported!'
+        if mode == 'image':
+            assert card_name is not None, 'must have a \"card_name\" when \"mode="image"\"!'
+            if save_path is not None:
+                assert save_path[-3:] == 'pdf', 'must save as a .pdf file!'
+            buffer = StringIO()
+            sys.stdout = buffer
+
         self._print_score_calculation_table()
         self._print_score_risk_table(quantile_len = quantile_len)
         
-
+        if mode == 'image':
+            print_output = buffer.getvalue()
+            sys.stdout = sys.__stdout__
+            risk_table = output_to_score_risk_df(print_output)
+            score_intervals, offset = output_to_score_intervals(print_output)
+            scv = ScoreCardVisualizer(score_intervals, offset)
+            tbv = TableVisualizer(risk_table, offset)
+            score_card_img = scv.generate_visual_card("", custom_row_order=custom_order)
+            risk_table_img = tbv.generate_table(card_name)
+            img = combine_images(score_card_img, risk_table_img)
+            
+            if save_path is not None:
+                save_img_to_pdf(img, save_path)
+                print(f"Risk card saved as \"{save_path}\"")
+            else:
+                img.show()
