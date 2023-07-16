@@ -14,10 +14,17 @@ class starRaySearchModel:
         self.n = self.X.shape[0]
         self.p = self.X.shape[1]
 
-        self.ub_arr = ub * np.ones((self.p, ))
-        self.ub_arr[0] = 100.0 # intercept upper bound
-        self.lb_arr = lb * np.ones((self.p, ))
-        self.lb_arr[0] = -100.0 # intercept lower bound
+        if isinstance(ub, (float, int)):
+            self.ub_arr = ub * np.ones((self.p, ))
+            self.ub_arr[0] = 100.0 # intercept upper bound
+        else:
+            self.ub_arr = np.insert(ub, 0, 100.0)   # add intercept upper bound
+        
+        if isinstance(lb, (float, int)):
+            self.lb_arr = lb * np.ones((self.p, ))
+            self.lb_arr[0] = -100.0 # intercept lower bound
+        else:
+            self.lb_arr = np.insert(lb, 0, -100)    # add intercept lower bound
 
         self.num_ray_search = num_ray_search
         self.early_stop_tolerance = early_stop_tolerance

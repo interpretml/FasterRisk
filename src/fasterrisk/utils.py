@@ -104,3 +104,15 @@ def save_response_content(response, destination):
         for chunk in response.iter_content(CHUNK_SIZE):
             if chunk: # filter out keep-alive new chunks
                 f.write(chunk)
+
+def check_bounds(bound,  bound_name, num_features):
+    if isinstance(bound, (float, int)):
+        assert bound >= 0 if bound_name == "ub" else bound <= 0, f"{bound_name} needs to be >= 0" if bound_name == "ub" else f"{bound_name} needs to be <= 0"
+    elif isinstance(bound, list):
+        bound = np.asarray(bound)
+        assert len(bound) == num_features, f"{bound_name}s for the features need to have the same length as the number of features"
+        assert np.all(bound >= 0 if bound_name == "ub" else bound <= 0), f"all of {bound_name}s needs to be >= 0" if bound_name == "ub" else f"all of {bound_name}s needs to be <= 0"
+    else:
+        raise ValueError(f"{bound_name} needs to be a float, int, or list")
+    
+    return bound

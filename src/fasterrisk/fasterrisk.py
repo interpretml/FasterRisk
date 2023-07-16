@@ -1,23 +1,11 @@
-import sys
-from io import StringIO
-
 import numpy as np
 import sklearn.metrics
 
+from fasterrisk.sparseBeamSearch import sparseLogRegModel, groupSparseLogRegModel
+from fasterrisk.sparseDiversePool import sparseDiversePoolLogRegModel, groupSparseDiversePoolLogRegModel
 from fasterrisk.rounding import starRaySearchModel
-from fasterrisk.score_visual import (ScoreCardVisualizer, TableVisualizer,
-                                     combine_images, output_to_score_intervals,
-                                     output_to_score_risk_df, save_img_to_pdf)
-from fasterrisk.sparseBeamSearch import (groupSparseLogRegModel,
-                                         sparseLogRegModel)
-from fasterrisk.sparseDiversePool import (groupSparseDiversePoolLogRegModel,
-                                          sparseDiversePoolLogRegModel)
-from fasterrisk.utils import (compute_logisticLoss_from_X_y_beta0_betas,
-                              get_all_product_booleans,
-                              get_groupIndex_to_featureIndices,
-                              get_support_indices, isEqual_upTo_8decimal,
-                              isEqual_upTo_16decimal)
 
+from fasterrisk.utils import compute_logisticLoss_from_X_y_beta0_betas, get_all_product_booleans, get_support_indices, isEqual_upTo_8decimal, isEqual_upTo_16decimal, get_all_product_booleans, get_groupIndex_to_featureIndices, check_bounds
 
 class RiskScoreOptimizer:
     def __init__(self, X, y, k, select_top_m=50, lb=-5, ub=5, \
@@ -36,11 +24,11 @@ class RiskScoreOptimizer:
         k : int
             number of selected features in the final sparse model
         select_top_m : int, optional
-            _description_, by default 50
-        lb : float, optional
-            lower bound of the coefficients, by default -5
-        ub : float, optional
-            upper bound of the coefficients, by default 5
+            number of top solutions to keep among the pool of diverse sparse solutions, by default 50
+        lb : float or list, optional
+            lower bound(s) of the coefficients, when passed as a list, specifies lower bounds for all the features in X, by default -5
+        ub : float or list, optional
+            upper bound(s) of the coefficients, when passed as a list, specifies lower bounds for all the features in X, by default 5
         parent_size : int, optional
             how many solutions to retain after beam search, by default 10
         child_size : int, optional
@@ -80,8 +68,8 @@ class RiskScoreOptimizer:
         self.sparseDiverseSet_select_top_m = select_top_m
         self.sparseDiverseSet_maxAttempts = maxAttempts
 
-        assert ub >= 0, "ub needs to be >= 0"
-        assert lb <= 0, "lb needs to be <= 0"
+        lb = check_bounds(lb, 'lb', X_shape[1])
+        ub = check_bounds(ub, 'ub', X_shape[1])
 
         self.group_sparsity = group_sparsity
         self.featureIndex_to_groupIndex = featureIndex_to_groupIndex
@@ -324,47 +312,8 @@ class RiskScoreClassifier:
         self._print_score_risk_row(all_scores[:num_scores_div_2], all_risks[:num_scores_div_2])
         self._print_score_risk_row(all_scores[num_scores_div_2:], all_risks[num_scores_div_2:])
 
-    def print_model_card(self, quantile_len=20, mode: str='raw', custom_order: list[str]=None, card_name: str=None, save_path: str=None):
+    def print_model_card(self, quantile_len=20):
+        """Print the score evaluation table and score risk table onto terminal
         """
-        Print risk score card
-
-        Parameters
-        ----------
-        quantile_len : int, optional
-            length of quantiles for risk score table calculation, by default 20
-        mode : str, optional
-            mode of the risk score table generation, if "image", generate risk score card as an image, if "raw", prints score card to terminal, by default 'raw'
-        custom_order : list[str], optional
-            order of the feature, matters only when mode="image", by default None
-        card_name : str, optional
-            name of the card, matters only when mode="image", by default None
-        save_path : str, optional
-            path to save the generated image as PDF, matters only whe mode="image", by default None
-        """
-        assert mode in ['raw', 'image'], 'mode not supported!'
-        if mode == 'image':
-            assert card_name is not None, 'must have a \"card_name\" when \"mode="image"\"!'
-            if save_path is not None:
-                assert save_path[-3:] == 'pdf', 'must save as a .pdf file!'
-            buffer = StringIO()
-            sys.stdout = buffer
-
         self._print_score_calculation_table()
         self._print_score_risk_table(quantile_len = quantile_len)
-        
-        if mode == 'image':
-            print_output = buffer.getvalue()
-            sys.stdout = sys.__stdout__
-            risk_table = output_to_score_risk_df(print_output)
-            score_intervals, offset = output_to_score_intervals(print_output)
-            scv = ScoreCardVisualizer(score_intervals, offset)
-            tbv = TableVisualizer(risk_table, offset)
-            score_card_img = scv.generate_visual_card("", custom_row_order=custom_order)
-            risk_table_img = tbv.generate_table(card_name)
-            img = combine_images(score_card_img, risk_table_img)
-            
-            if save_path is not None:
-                save_img_to_pdf(img, save_path)
-                print(f"Risk card saved as \"{save_path}\"")
-            else:
-                img.show()
