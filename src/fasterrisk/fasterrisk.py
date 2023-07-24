@@ -5,7 +5,7 @@ from fasterrisk.sparseBeamSearch import sparseLogRegModel, groupSparseLogRegMode
 from fasterrisk.sparseDiversePool import sparseDiversePoolLogRegModel, groupSparseDiversePoolLogRegModel
 from fasterrisk.rounding import starRaySearchModel
 
-from fasterrisk.utils import compute_logisticLoss_from_X_y_beta0_betas, get_all_product_booleans, get_support_indices, isEqual_upTo_8decimal, isEqual_upTo_16decimal, get_all_product_booleans, get_groupIndex_to_featureIndices
+from fasterrisk.utils import compute_logisticLoss_from_X_y_beta0_betas, get_all_product_booleans, get_support_indices, isEqual_upTo_8decimal, isEqual_upTo_16decimal, get_all_product_booleans, get_groupIndex_to_featureIndices, check_bounds
 
 class RiskScoreOptimizer:
     def __init__(self, X, y, k, select_top_m=50, lb=-5, ub=5, \
@@ -24,11 +24,11 @@ class RiskScoreOptimizer:
         k : int
             number of selected features in the final sparse model
         select_top_m : int, optional
-            _description_, by default 50
-        lb : float, optional
-            lower bound of the coefficients, by default -5
-        ub : float, optional
-            upper bound of the coefficients, by default 5
+            number of top solutions to keep among the pool of diverse sparse solutions, by default 50
+        lb : float or list, optional
+            lower bound(s) of the coefficients, when passed as a list, specifies lower bounds for all the features in X, by default -5
+        ub : float or list, optional
+            upper bound(s) of the coefficients, when passed as a list, specifies lower bounds for all the features in X, by default 5
         parent_size : int, optional
             how many solutions to retain after beam search, by default 10
         child_size : int, optional
@@ -68,8 +68,8 @@ class RiskScoreOptimizer:
         self.sparseDiverseSet_select_top_m = select_top_m
         self.sparseDiverseSet_maxAttempts = maxAttempts
 
-        assert ub >= 0, "ub needs to be >= 0"
-        assert lb <= 0, "lb needs to be <= 0"
+        lb = check_bounds(lb, 'lb', X_shape[1])
+        ub = check_bounds(ub, 'ub', X_shape[1])
 
         self.group_sparsity = group_sparsity
         self.featureIndex_to_groupIndex = featureIndex_to_groupIndex
@@ -317,5 +317,3 @@ class RiskScoreClassifier:
         """
         self._print_score_calculation_table()
         self._print_score_risk_table(quantile_len = quantile_len)
-        
-
