@@ -1,6 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=jupyter
 #SBATCH --exclude=linux[1-50]
+#SBATCH --exclusive
 #SBATCH --time=2-00:00:00
 #SBATCH --mem=50GB
 #SBATCH --output=/usr/xtmp/jl888/FasterRisk/jupyter.log
