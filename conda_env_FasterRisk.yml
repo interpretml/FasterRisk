@@ -1,0 +1,9 @@
+name: FasterRisk
+channels:
+    - conda-forge
+dependencies:
+    - python=3.9
+    - htop
+    - poetry
+    - cookiecutter
+    - myst-nb
