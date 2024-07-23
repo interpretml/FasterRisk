@@ -82,12 +82,29 @@ class starRaySearchModel:
         """
         sparseDiversePool_continuous = np.hstack((sparseDiversePool_beta0_continuous.reshape(-1, 1), sparseDiversePool_betas_continuous))
         
-        sparseDiversePool_integer = np.zeros(sparseDiversePool_continuous.shape)
-        multipliers = np.zeros((sparseDiversePool_integer.shape[0]))
+        sparseDiversePool_integer = []
+        multipliers = []
+        sparseDiversePool_integer_support_mask_set = set()
+        tmp_support_mask = np.zeros((self.p, ), dtype=bool)
 
-        for i in range(len(multipliers)):
-            multipliers[i], sparseDiversePool_integer[i] = self.line_search_scale_and_round(sparseDiversePool_continuous[i])
+        for i in range(len(sparseDiversePool_continuous)):
+            tmp_multiplier, tmp_sparseDiversePool_integer = self.line_search_scale_and_round(sparseDiversePool_continuous[i])
+
+            tmp_support_indices = get_support_indices(tmp_sparseDiversePool_integer)
+            tmp_support_mask[:] = False
+            tmp_support_mask[tmp_support_indices] = True
+
+            # during rounding, two continuous solutions may be rounded to the same integer solution (integer support becomes a strict subset of continuous support); if so, we only keep the first one
+            tmp_support_mask_str = tmp_support_mask.tostring()
+            if tmp_support_mask_str in sparseDiversePool_integer_support_mask_set:
+                continue
+
+            sparseDiversePool_integer_support_mask_set.add(tmp_support_mask_str)
+            multipliers.append(tmp_multiplier)
+            sparseDiversePool_integer.append(tmp_sparseDiversePool_integer)
         
+        multipliers = np.array(multipliers)
+        sparseDiversePool_integer = np.vstack(sparseDiversePool_integer)
         return multipliers, sparseDiversePool_integer[:, 0], sparseDiversePool_integer[:, 1:]
 
     def line_search_scale_and_round(self, betas):
