@@ -7,6 +7,8 @@ from fasterrisk.rounding import starRaySearchModel
 
 from fasterrisk.utils import compute_logisticLoss_from_X_y_beta0_betas, get_all_product_booleans, get_support_indices, isEqual_upTo_8decimal, isEqual_upTo_16decimal, get_all_product_booleans, get_groupIndex_to_featureIndices, check_bounds
 
+from collections import defaultdict
+
 class RiskScoreOptimizer:
     def __init__(self, X, y, k, select_top_m=50, lb=-5, ub=5, \
                  gap_tolerance=0.05, parent_size=10, child_size=None, \
@@ -74,6 +76,10 @@ class RiskScoreOptimizer:
         self.group_sparsity = group_sparsity
         self.featureIndex_to_groupIndex = featureIndex_to_groupIndex
 
+        self.multipliers = None
+        self.sparseDiversePool_beta0_integer = None
+        self.sparseDiversePool_betas_integer = None
+
         if self.group_sparsity is None:
             self.sparseLogRegModel_object = sparseLogRegModel(X, y, intercept=True, original_lb=lb, original_ub=ub)
             self.sparseDiversePoolLogRegModel_object = sparseDiversePoolLogRegModel(X, y, intercept=True, original_lb=lb, original_ub=ub)
@@ -135,11 +141,80 @@ class RiskScoreOptimizer:
         sparseDiversePool_integer : ndarray
             (2D array with `float` type) integer coefficients (intercept included) with each row as an integer solution sparseDiversePool_integer[i]
         """
+        if self.multipliers is None:
+            raise ValueError("Please run the optimization first by calling the function .optimize()")
+        
         if self.IntegerPoolIsSorted is False:
             self._sort_IntegerPool_on_logisticLoss()
         if model_index is not None:
             return self.multipliers[model_index], self.sparseDiversePool_beta0_integer[model_index], self.sparseDiversePool_betas_integer[model_index]
         return self.multipliers, self.sparseDiversePool_beta0_integer, self.sparseDiversePool_betas_integer
+
+    def get_models_in_dict(self, featureNames, model_index=None, featureIndex_to_groupIndex = None):
+        """Get the model in dict format
+
+        Parameters
+        ----------
+        featureNames : str[:]
+            a list of strings which are the feature names for columns of X
+        model_index : int, optional
+            index of the model in the integer sparseDiverseSet, by default None; if None, return all models as a list
+        featureIndex_to_groupIndex : ndarray
+            (1D array with `int` type) featureIndex_to_groupIndex[i] is the group index of feature i, by default None
+        
+        Returns
+        -------
+        model_in_dict : dict or list of dict
+            a dictionary containing the model and its performance metrics or a list of dictionaries containing all models and their performance metrics
+        """
+
+        if self.featureIndex_to_groupIndex is None:
+            if featureIndex_to_groupIndex is None:
+                raise ValueError("featureIndex_to_groupIndex must be provided if it is not provided during initialization")
+            self.featureIndex_to_groupIndex = featureIndex_to_groupIndex
+        else:
+            if featureIndex_to_groupIndex is not None:
+                assert isEqual_upTo_8decimal(self.featureIndex_to_groupIndex, featureIndex_to_groupIndex), "featureIndex_to_groupIndex provided during initialization is different from the one provided now"
+        
+        if model_index is not None:
+            # only return the model at model_index
+            multiplier, intercept, coefficients = self.get_models(model_index)
+
+            RiskScoreClassifier_m = RiskScoreClassifier(multiplier=multiplier, intercept=intercept, coefficients=coefficients, featureNames=featureNames, X_train = self.X)
+
+            # obtain feature data
+            nonzero_indices = get_support_indices(coefficients)
+            feature_data_list = []
+            for feature_index in nonzero_indices:
+                feature_data_list.append([coefficients[feature_index], featureNames[feature_index]])
+            
+            # obtain risk scale
+            all_scores, all_risks = RiskScoreClassifier_m._get_scores_and_risks(quantile_len = 20)
+            risk_scale_list = []
+            for score, risk in zip(all_scores, all_risks):
+                risk_scale_list.append([score, risk])
+
+            # obtain logistic loss, accuracy, and AUC
+            train_logistic_loss = RiskScoreClassifier_m.compute_logisticLoss(self.X, self.y)
+            train_acc, train_auc = RiskScoreClassifier_m.get_acc_and_auc(self.X, self.y)
+
+            # put all useful information into a dictionary
+            model_in_dict = dict()
+            model_in_dict["feature_data"] = feature_data_list
+            model_in_dict["risk_scale"] = risk_scale_list
+            model_in_dict["training_logistic_loss"] = train_logistic_loss
+            model_in_dict["training_accuracy"] = train_acc
+            model_in_dict["training_AUC"] = train_auc
+            model_in_dict["card_label"] = model_index
+
+            return model_in_dict
+        
+        # return all models
+        model_in_dict_list = []
+        multipliers, _, _ = self.get_models()
+        for model_index in range(len(multipliers)):
+            model_in_dict_list.append(self.get_models_in_dict(featureNames, model_index, featureIndex_to_groupIndex))
+        return model_in_dict_list
 
 
 
@@ -284,9 +359,8 @@ class RiskScoreClassifier:
             risk_row += risk_entry_template.format(round(100*risk, 1))
         print(score_row)
         print(risk_row)
-
-    def _print_score_risk_table(self, quantile_len):
-
+    
+    def _get_scores_and_risks(self, quantile_len):
         nonzero_indices = get_support_indices(self.coefficients)
         len_nonzero_indices = len(nonzero_indices)
 
@@ -307,6 +381,11 @@ class RiskScoreClassifier:
 
         all_scaled_scores = (self.intercept + all_scores) / self.multiplier
         all_risks = 1 / (1 + np.exp(-all_scaled_scores))
+
+        return all_scores, all_risks
+
+    def _print_score_risk_table(self, quantile_len):
+        all_scores, all_risks = self._get_scores_and_risks(quantile_len)
 
         num_scores_div_2 = (len(all_scores) + 1) // 2
         self._print_score_risk_row(all_scores[:num_scores_div_2], all_risks[:num_scores_div_2])
