@@ -318,17 +318,19 @@ def check_if_featureNames_come_from_RiskSLIM_GitHub_data(featureNames):
         2, 2, 2  # Capital run length-related features
     ]
 
+    groupIndex = []
     if featureNames == adult_featureNames:
-        return adult_groupIndex
+        groupIndex = adult_groupIndex
     elif featureNames == bank_featureNames:
-        return bank_groupIndex
+        groupIndex = bank_groupIndex
     elif featureNames == breastcancer_featureNames:
-        return breastcancer_groupIndex
+        groupIndex = breastcancer_groupIndex
     elif featureNames == mammo_featureNames:
-        return mammo_groupIndex
+        groupIndex = mammo_groupIndex
     elif featureNames == mushroom_featureNames:
-        return mushroom_groupIndex
+        groupIndex = mushroom_groupIndex
     elif featureNames == spambase_featureNames:
-        return spambase_groupIndex
-    else:
-        return []
+        groupIndex = spambase_groupIndex
+
+    groupIndex = np.asarray(groupIndex, dtype=int)
+    return groupIndex
