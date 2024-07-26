@@ -123,30 +123,35 @@ def get_continuousFeatureName_from_binaryFeatureName(binaryFeatureName):
     featureName = None
     errorMessage = f"Feature name {binaryFeatureName} does not follow the format 'FeatureName<=Threshold' or 'Threshold1<FeatureName<=Threshold2' or FeatureName_isNaN!"
 
-    if '<=' in binaryFeatureName and '<' in binaryFeatureName:
-        num_leq = binaryFeatureName.count('<=')
-        num_less = binaryFeatureName.count('<')
-        if num_leq + num_less > 2:
-            raise ValueError(f"{errorMessage}")
-        try:
-            featureName = binaryFeatureName.split('<')[1].split('<=')[0]
-        except:
-            raise ValueError(f"{errorMessage}")
-    elif '<=' in binaryFeatureName:
-        num_leq = binaryFeatureName.count('<=')
-        if num_leq > 1:
-            raise ValueError(f"{errorMessage}")
-        try:
-            featureName = binaryFeatureName.split('<=')[1]
-        except:
-            raise ValueError(f"{errorMessage}")
-    elif '_isNaN' in binaryFeatureName:
+    if '_isNaN' in binaryFeatureName:
         num_isnan = binaryFeatureName.count('_isNaN')
         if num_isnan > 1:
             raise ValueError(f"{errorMessage}")
         if binaryFeatureName[-6:] != '_isNaN':
             raise ValueError(f"{errorMessage}")
         featureName = binaryFeatureName.split('_')[0]
+
+    elif '<=' in binaryFeatureName:
+        num_leq = binaryFeatureName.count('<=')
+        num_less = binaryFeatureName.count('<')
+
+        if num_less == 2 and num_leq == 1:
+            # this is the case where the feature name is in the form of 'Threshold1<FeatureName<=Threshold2'
+            try:
+                featureName = binaryFeatureName.split('<')[1].split('<=')[0]
+            except:
+                raise ValueError(f"{errorMessage}")
+            
+        elif num_less == 1 and num_leq == 1:
+            # this is the case where the feature name is in the form of 'FeatureName<=Threshold'
+            try:
+                featureName = binaryFeatureName.split('<=')[0]
+            except:
+                raise ValueError(f"{errorMessage}")
+            
+        else:
+            raise ValueError(f"{errorMessage}")
+
     else:
         raise ValueError(f"{errorMessage}")
 
