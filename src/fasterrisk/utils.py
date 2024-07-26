@@ -166,7 +166,7 @@ def get_groupIndex_from_featureNames(featureNames):
     
     groupIndex = check_if_featureNames_come_from_RiskSLIM_GitHub_data(featureNames)
     if len(groupIndex) > 0:
-        return groupIndex
+        return np.asarray(groupIndex, dtype=int)
     
     continuousFeatureNameIndexDict = dict()
     numContinuousFeatures = 0
@@ -332,5 +332,4 @@ def check_if_featureNames_come_from_RiskSLIM_GitHub_data(featureNames):
     elif featureNames == spambase_featureNames:
         groupIndex = spambase_groupIndex
 
-    groupIndex = np.asarray(groupIndex, dtype=int)
     return groupIndex
