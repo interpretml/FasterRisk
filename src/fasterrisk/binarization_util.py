@@ -176,7 +176,7 @@ class BinBinarizer(_BaseEncoder):
             
             if self.whether_interval:
                 # do it in intervals
-                for i in range(0, len(perctile)-1):
+                for i in range(0, len(perctile)):   # NOTE: changed due to inconsistency issue with number of bins
                     if i == 0:
                         name = f"{col}<={perctile[i]}"
                         threshold = perctile[i]
@@ -192,7 +192,7 @@ class BinBinarizer(_BaseEncoder):
                         GroupMap[col] = col_idx
             else:
                 # do it in <=
-                for i in range(0, len(perctile)-1):
+                for i in range(0, len(perctile)):   # NOTE: changed due to inconsistency issue with number of bins
                     binarizers.append({
                         "name": f"{col}<={perctile[i]}",
                         "col": col,

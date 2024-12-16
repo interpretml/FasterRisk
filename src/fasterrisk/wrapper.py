@@ -49,7 +49,9 @@ def shift_coefficients(feature_offsets: pd.DataFrame, features_and_betas: List) 
         if 'isNaN' in feature:          # every NaN needs to be 0
             features_and_betas[1][i] = 0
             continue
-        if 'isNaN' in next_feature and feature.split('<=')[0] in selected_features:         # every last feature of selected ones needs to be shifted
+
+        # every last feature of selected ones needs to be shifted
+        if ('isNaN' in next_feature or feature.split('<=')[0] != next_feature.split('<=')[0]) and feature.split('<=')[0] in selected_features:     # NOTE: changed to include the edge case where isNaN is not available (no missing values in dataset)
             features_and_betas[1][i] -= feature_offsets.loc[feature.split('<=')[0], 'interval_points']
     
     return features_and_betas[1]
@@ -76,7 +78,9 @@ def get_max_features(X_train: pd.DataFrame) -> Dict[str, float]:
         if 'isNaN' in binarized_feature:
             continue
         split = binarized_feature.split('<=')
-        if 'isNaN' in next_binarized_feature:                                # if encountered a new feature, this assumes that bins for one feature is altogether
+
+        # if encountered a new feature, this assumes that bins for one feature is altogether
+        if 'isNaN' in next_binarized_feature or split[0] != next_binarized_feature.split('<=')[0]:      # NOTE: changed to include the edge case where isNaN is not available (no missing values in dataset)
             feature_max_dict[split[0]] = float(split[1])
     
     return feature_max_dict

@@ -118,7 +118,10 @@ def compute_offset(df_interval: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFram
     return df_offset, pd.concat([df_offset['feature'], feature_offsets], axis=1).groupby('feature').tail(1)
 
 def output_to_score_intervals(input_text: str, feature_max_dict: Dict[str, float]) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    return compute_offset(compute_cumulative(scrape_to_df(input_text), feature_max_dict = feature_max_dict))
+    scrape_df = scrape_to_df(input_text)
+    cumul_df = compute_cumulative(scrape_df, feature_max_dict = feature_max_dict)
+    offset = compute_offset(cumul_df)
+    return offset
 
 class ScoreCardVisualizer:
 
