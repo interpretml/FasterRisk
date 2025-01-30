@@ -142,7 +142,10 @@ class BinBinarizer(_BaseEncoder):
         for col_idx in range(len(self.cols)):
             col = self.cols[col_idx]
             col_value = df[col]
-            
+
+            # Initialize tmp_num_thresholds *before* checking for NaNs
+            tmp_num_thresholds = self.max_num_thresholds_per_feature
+        
             if col_value.isnull().sum() > 0:
                 tmp_num_thresholds -= 1
                 binarizers.append({                 # need to keep track of NaN for every column
