@@ -93,7 +93,7 @@ if (!file.exists(train_data_file_path)){
     fasterrisk$utils$download_file_from_google_drive('1nuWn0QVG8tk3AN4I4f3abWLcFEP3WPec', train_data_file_path)
 }
 
-if (!file.exists(train_data_file_path)){
+if (!file.exists(test_data_file_path)){
     # download sample test data if it doesn't exists
     fasterrisk$utils$download_file_from_google_drive('1TyBO02LiGfHbatPWU4nzc8AndtIF-7WH', test_data_file_path)
 }
@@ -106,12 +106,12 @@ np <- import("numpy", convert=FALSE)
 train_df <- read.csv(train_data_file_path)
 train_data <- data.matrix(train_df)
 X_train <- np$array(train_data[, 2:ncol(train_data)])
-y_train <- np$array(train_data[, 1], dtype=np$int) # Check your data! y label must be +1/-1.
+y_train <- np$array(train_data[, 1], dtype=np$int8) # Check your data! y label must be +1/-1.
 
 test_df <- read.csv(test_data_file_path)
 test_data <- data.matrix(test_df)
 X_test <- np$array(test_data[, 2:ncol(test_data)])
-y_test <- np$array(test_data[, 1], dtype=np$int) # Check your data! y label must be +1/-1.
+y_test <- np$array(test_data[, 1], dtype=np$int8) # Check your data! y label must be +1/-1.
 ```
 
 # 3 Training the Model
